@@ -4,17 +4,18 @@ import os
 import numpy as np
 import networktables
 
-TESTMODE = True
+TESTMODE = False
 MANUALIMAGEMODE = True
 towerCameraRes = [1280.0, 720.0]
 ballCameraRes = [1280.0, 720.0]
 imageNumber = 1
+frameNumber = 0
 #
 def processTowerCamera(camera):
     filteredContours = []
     originalImage = pollCamera(camera)
-    blurredImage = cv2.blur(originalImage, (6, 6))
-    RGBImage = cv2.cvtColor(blurredImage, cv2.COLOR_BGR2RGB)
+    #blurredImage = cv2.blur(originalImage, (6, 6))
+    RGBImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2RGB)
     RBGThresholdImage = cv2.inRange(RGBImage, np.array([69,122,197]), np.array([255, 255, 255]))
     _,contours,_ = cv2.findContours(RBGThresholdImage, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     for x in contours:
@@ -49,10 +50,16 @@ def pollCamera(camera):
 #end def
 
 def calculateFPS(lastTime):
-    currentTime = time.struct_time.tm_sec
-    fps = (currentTime - lastTime)
-    print "FPS: " + str(fps)
-    return currentTime
+    currentTime = time.clock()
+    global frameNumber
+    if(frameNumber>=10):
+        fps = 1.0/(currentTime - lastTime)
+        print "FPS: " + str(fps)
+        frameNumber = 0
+        return currentTime
+    else:
+        frameNumber+=1
+        return currentTime
 #end def
         
 def main():
@@ -63,8 +70,7 @@ def main():
     towerCamera.set(cv2.CAP_PROP_FRAME_WIDTH, towerCameraRes[0])
     towerCamera.set(cv2.CAP_PROP_FRAME_HEIGHT, towerCameraRes[1])
     print "Tower Camera Resolution = " + str(towerCamera.get(cv2.CAP_PROP_FRAME_WIDTH)) + "x" + str(towerCamera.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    lastTime = time.struct_time.tm_sec
-    fps = 1
+    lastTime = time.clock()
     if towerCamera.isOpened() == False:
         print "error: Tower Camera not initialized"
         os.system("pause")
