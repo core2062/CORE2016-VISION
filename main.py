@@ -38,7 +38,7 @@ def processBallCamera(camera):
     
 def pollCamera(camera):
     if MANUALIMAGEMODE == True:
-        imgOriginal = cv2.imread('towerImages/tower (' + str(imageNumber) + ').jpg',1)
+        imgOriginal = cv2.imread('towerImages/tower (' + str(imageNumber) + ')_720x405.jpg',1)
     else:
         blnFrameReadSuccessfully, imgOriginal = camera.read()
         if not blnFrameReadSuccessfully or imgOriginal is None:
