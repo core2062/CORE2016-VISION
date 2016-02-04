@@ -2,6 +2,7 @@ import cv2
 import time
 import os
 import numpy as np
+import platform
 import networktables
 
 TESTMODE = True
@@ -29,7 +30,6 @@ def processTowerCamera(camera):
             solidity = float(contourArea)/hull_area
             if (solidity < 0.5 and area > 500 and size[1] > 25):
                 filteredContours.append(x)
-                print str(size[0]) + "x" + str(size[1]) + "_"+str(angle)
     cv2.drawContours(originalImage,filteredContours,-1,(0,0,255),2)
     if(TESTMODE):
         cv2.imshow("Image", originalImage)
@@ -74,6 +74,9 @@ def changeImage(img):
     global imageNumber
     imageNumber = img+1
 def main():
+    if platform.system() == "Linux":
+        global TESTMODE
+        TESTMODE = False
     if MANUALIMAGEMODE == True:
         towerCamera = cv2.VideoCapture(0)
         #ballCamera = cv2.VideoCapture(1)
