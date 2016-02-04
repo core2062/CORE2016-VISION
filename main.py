@@ -10,25 +10,29 @@ towerCameraRes = [1280.0, 720.0]
 ballCameraRes = [1280.0, 720.0]
 imageNumber = 1
 frameNumber = 0
+frames = 0
 #
 def processTowerCamera(camera):
     filteredContours = []
     originalImage = pollCamera(camera)
     #blurredImage = cv2.blur(originalImage, (6, 6))
-    RGBImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2RGB)
-    RBGThresholdImage = cv2.inRange(RGBImage, np.array([69,122,197]), np.array([255, 255, 255]))
+    #RGBImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2RGB)
+    RBGThresholdImage = cv2.inRange(originalImage, np.array([197,122,69]), np.array([255, 255, 255]))
     _,contours,_ = cv2.findContours(RBGThresholdImage, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     for x in contours:
-        area = cv2.contourArea(x)
+        centroid,size,angle = cv2.minAreaRect(x)
+        area = abs(size[0]*size[1])
         hull = cv2.convexHull(x)
+        contourArea = cv2.contourArea(x)
         if area != 0:
             hull_area = cv2.contourArea(hull)
-            solidity = float(area)/hull_area
-            if (solidity < 0.5 and area > 1200):
+            solidity = float(contourArea)/hull_area
+            if (solidity < 0.5 and area > 500 and size[1] > 25):
                 filteredContours.append(x)
-    cv2.drawContours(originalImage,filteredContours,-1,(0,0,255),3)
+                print str(size[0]) + "x" + str(size[1]) + "_"+str(angle)
+    cv2.drawContours(originalImage,filteredContours,-1,(0,0,255),2)
     if(TESTMODE):
-        cv2.imshow("contours", originalImage)
+        cv2.imshow("Image", originalImage)
     #TODO publish contours to network tables
     #end def
 def processBallCamera(camera):
@@ -38,7 +42,7 @@ def processBallCamera(camera):
     
 def pollCamera(camera):
     if MANUALIMAGEMODE == True:
-        imgOriginal = cv2.imread('towerImages/tower (' + str(imageNumber) + ')_640x360.jpg',1)
+        imgOriginal = cv2.imread('towerImages/tower (' + str(imageNumber) + ')_720x405.jpg',1)
     else:
         blnFrameReadSuccessfully, imgOriginal = camera.read()
         if not blnFrameReadSuccessfully or imgOriginal is None:
@@ -52,16 +56,23 @@ def pollCamera(camera):
 def calculateFPS(lastTime):
     currentTime = time.clock()
     global frameNumber
-    if(frameNumber>=10):
-        fps = 1.0/(currentTime - lastTime)
+    global frames
+    deltaTime = (currentTime - lastTime)
+    if(deltaTime>=1):
+        fps = frames/(currentTime - lastTime)
         print "FPS: " + str(fps)
         frameNumber = 0
+        frames = 1.0
         return currentTime
     else:
+        frames += 1.0
         frameNumber+=1
-        return currentTime
+        return lastTime
 #end def
-        
+
+def changeImage(img):
+    global imageNumber
+    imageNumber = img+1
 def main():
     if MANUALIMAGEMODE == True:
         towerCamera = cv2.VideoCapture(0)
@@ -76,7 +87,8 @@ def main():
         os.system("pause")
         return
     # end if
-    
+    cv2.namedWindow("Image",cv2.WINDOW_AUTOSIZE)
+    cv2.createTrackbar("Image #", "Image", 0, 37, changeImage)
     while cv2.waitKey(1) != 27 and towerCamera.isOpened(): #and ballCamera.isOpened()
         processTowerCamera(towerCamera)
         lastTime = calculateFPS(lastTime)
