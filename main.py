@@ -87,8 +87,9 @@ def main():
         os.system("pause")
         return
     # end if
-    cv2.namedWindow("Image",cv2.WINDOW_AUTOSIZE)
-    cv2.createTrackbar("Image #", "Image", 0, 37, changeImage)
+    if TESTMODE:
+        cv2.namedWindow("Image",cv2.WINDOW_AUTOSIZE)
+        cv2.createTrackbar("Image #", "Image", 0, 37, changeImage)
     while cv2.waitKey(1) != 27 and towerCamera.isOpened(): #and ballCamera.isOpened()
         processTowerCamera(towerCamera)
         lastTime = calculateFPS(lastTime)
