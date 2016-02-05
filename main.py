@@ -7,7 +7,6 @@ import numpy as np
 import platform
 from networktables import NetworkTable
 
-
 TESTMODE = True
 MANUALIMAGEMODE = True
 towerCameraRes = [1280.0, 720.0]
@@ -17,7 +16,7 @@ frameNumber = 0
 frames = 0
 visionNetworkTable = None
 hostname = "roborio-2062"
-#
+
 def processTowerCamera(camera):
     filteredContours = []
     originalImage = pollCamera(camera)
@@ -33,24 +32,28 @@ def processTowerCamera(camera):
         if area != 0:
             hull_area = cv2.contourArea(hull)
             solidity = float(contourArea)/hull_area
-            if (solidity < 0.5 and area > 500 and size[1] > 25):
+            if (solidity < 0.4 and area > 500 and size[1] > 25):
                 filteredContours.append(x)
     cv2.drawContours(originalImage,filteredContours,-1,(0,0,255),2)
-    i = 0
+    i = 1
     for x in filteredContours:
-        centroid,_,angle = cv2.minAreaRect(filteredContours[i])
+        centroid,size,angle = cv2.minAreaRect(filteredContours[i-1])
         visionNetworkTable.putNumber("goal"+str(i)+"_x", centroid[0])
         visionNetworkTable.putNumber("goal"+str(i)+"_y", centroid[1])
+        visionNetworkTable.putNumber("goal"+str(i)+"_width", size[0])
+        visionNetworkTable.putNumber("goal"+str(i)+"_height", size[1])
         visionNetworkTable.putNumber("goal"+str(i)+"_angle", angle)
+        cv2.circle(originalImage, (int(centroid[0]),int(centroid[1])), 2, np.array([0,255,0]), 2, 8 );
         i+=1
     for x in range(3-i):
-        visionNetworkTable.putNumber("goal"+str(i)+"_x", -1)
-        visionNetworkTable.putNumber("goal"+str(i)+"_y", -1)
-        visionNetworkTable.putNumber("goal"+str(i)+"_angle", -1)
+        visionNetworkTable.putNumber("goal"+str(3-i)+"_x", -1)
+        visionNetworkTable.putNumber("goal"+str(3-i)+"_y", -1)
+        visionNetworkTable.putNumber("goal"+str(3-i)+"_width", -1)
+        visionNetworkTable.putNumber("goal"+str(3-i)+"_height", -1)
+        visionNetworkTable.putNumber("goal"+str(3-i)+"_angle", -1)
     if(TESTMODE):
         cv2.imshow("Image", originalImage)
-    #TODO publish contours to network tables
-    #end def
+#end def
 def processBallCamera(camera):
     originalImage = pollCamera(camera)
     originalImage
@@ -103,6 +106,7 @@ def main():
     NetworkTable.initialize()
     global visionNetworkTable
     visionNetworkTable = NetworkTable.getTable('Vision')
+    visionNetworkTable.putString("debug", strftime("%H:%M:%S", gmtime())+": Network Table Initialized")
     towerCamera.set(cv2.CAP_PROP_FRAME_WIDTH, towerCameraRes[0])
     towerCamera.set(cv2.CAP_PROP_FRAME_HEIGHT, towerCameraRes[1])
     print "Tower Camera Resolution = " + str(towerCamera.get(cv2.CAP_PROP_FRAME_WIDTH)) + "x" + str(towerCamera.get(cv2.CAP_PROP_FRAME_HEIGHT))
