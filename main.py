@@ -9,7 +9,7 @@ from networktables import NetworkTable
 
 TESTMODE = True
 MANUALIMAGEMODE = True
-towerCameraRes = [720.0, 405.0]
+towerCameraRes = [960.0, 544.0]
 ballCameraRes = [1280.0, 720.0]
 imageNumber = 1
 frameNumber = 0
@@ -59,7 +59,7 @@ def processBallCamera(camera):
     
 def pollCamera(camera):
     if MANUALIMAGEMODE == True:
-        imgOriginal = cv2.imread('towerImages/tower (' + str(imageNumber) + ')_720x405.jpg',1)
+        imgOriginal = cv2.imread('towerImages/tower (' + str(imageNumber) + ')_960x540.jpg',1)
     else:
         blnFrameReadSuccessfully, imgOriginal = camera.read()
         if not blnFrameReadSuccessfully or imgOriginal is None:
@@ -95,7 +95,7 @@ def main():
     if platform.system() == "Linux":
         global TESTMODE
         TESTMODE = False
-    towerCamera = cv2.VideoCapture(0)
+    towerCamera = cv2.VideoCapture(1)
     #ballCamera = cv2.VideoCapture(1)
     NetworkTable.setIPAddress(hostname)
     NetworkTable.setClientMode()
