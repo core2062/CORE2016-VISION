@@ -9,7 +9,7 @@ from networktables import NetworkTable
 
 TESTMODE = True
 MANUALIMAGEMODE = True
-towerCameraRes = [1280.0, 720.0]
+towerCameraRes = [720.0, 405.0]
 ballCameraRes = [1280.0, 720.0]
 imageNumber = 1
 frameNumber = 0
@@ -20,8 +20,6 @@ hostname = "roborio-2062"
 def processTowerCamera(camera):
     filteredContours = []
     originalImage = pollCamera(camera)
-    #blurredImage = cv2.blur(originalImage, (6, 6))
-    #RGBImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2RGB)
     RBGThresholdImage = cv2.inRange(originalImage, np.array([197,122,69]), np.array([255, 255, 255]))
     _,contours,_ = cv2.findContours(RBGThresholdImage, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     for x in contours:
@@ -32,7 +30,7 @@ def processTowerCamera(camera):
         if area != 0:
             hull_area = cv2.contourArea(hull)
             solidity = float(contourArea)/hull_area
-            if (solidity < 0.4 and area > 500 and size[1] > 25):
+            if (solidity < 0.4 and area/(towerCameraRes[0]*towerCameraRes[1]) > 0.001714 and size[1]/(towerCameraRes[0]*towerCameraRes[1]) > 0.00008573):
                 filteredContours.append(x)
     cv2.drawContours(originalImage,filteredContours,-1,(0,0,255),2)
     i = 1
@@ -94,13 +92,11 @@ def changeImage(img):
     global imageNumber
     imageNumber = img+1
 def main():
-    
     if platform.system() == "Linux":
         global TESTMODE
         TESTMODE = False
-    if MANUALIMAGEMODE == True:
-        towerCamera = cv2.VideoCapture(0)
-        #ballCamera = cv2.VideoCapture(1)
+    towerCamera = cv2.VideoCapture(0)
+    #ballCamera = cv2.VideoCapture(1)
     NetworkTable.setIPAddress(hostname)
     NetworkTable.setClientMode()
     NetworkTable.initialize()
