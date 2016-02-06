@@ -44,11 +44,11 @@ def processTowerCamera(camera):
         cv2.circle(originalImage, (int(centroid[0]),int(centroid[1])), 2, np.array([0,255,0]), 2, 8 );
         i+=1
     for x in range(3-i):
-        visionNetworkTable.putNumber("goal"+str(3-i)+"_x", -1)
-        visionNetworkTable.putNumber("goal"+str(3-i)+"_y", -1)
-        visionNetworkTable.putNumber("goal"+str(3-i)+"_width", -1)
-        visionNetworkTable.putNumber("goal"+str(3-i)+"_height", -1)
-        visionNetworkTable.putNumber("goal"+str(3-i)+"_angle", -1)
+        visionNetworkTable.putNumber("goal"+str(x+i)+"_x", -1)
+        visionNetworkTable.putNumber("goal"+str(x+i)+"_y", -1)
+        visionNetworkTable.putNumber("goal"+str(x+i)+"_width", -1)
+        visionNetworkTable.putNumber("goal"+str(x+i)+"_height", -1)
+        visionNetworkTable.putNumber("goal"+str(x+i)+"_angle", -1)
     if(TESTMODE):
         cv2.imshow("Image", originalImage)
 #end def
