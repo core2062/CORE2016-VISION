@@ -15,7 +15,7 @@ imageNumber = 1
 frameNumber = 0
 frames = 0
 visionNetworkTable = None
-hostname = "roborio-2062"
+hostname = "roboRIO-2062-FRC.local"
 
 def processTowerCamera(camera):
     filteredContours = []
@@ -95,7 +95,7 @@ def main():
     if platform.system() == "Linux":
         global TESTMODE
         TESTMODE = False
-    towerCamera = cv2.VideoCapture(1)
+    towerCamera = cv2.VideoCapture(0)
     #ballCamera = cv2.VideoCapture(1)
     NetworkTable.setIPAddress(hostname)
     NetworkTable.setClientMode()
