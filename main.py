@@ -22,6 +22,8 @@ def processTowerCamera(camera):
     originalImage = pollCamera(camera)
     RBGThresholdImage = cv2.inRange(originalImage, np.array([197,122,69]), np.array([255, 255, 255]))
     _,contours,_ = cv2.findContours(RBGThresholdImage, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    largestArea = 0
+    largestContour = None
     for x in contours:
         centroid,size,angle = cv2.minAreaRect(x)
         area = abs(size[0]*size[1])
@@ -31,32 +33,28 @@ def processTowerCamera(camera):
             hull_area = cv2.contourArea(hull)
             solidity = float(contourArea)/hull_area
             if (solidity < 0.4 and area/(towerCameraRes[0]*towerCameraRes[1]) > 0.001714 and size[1]/(towerCameraRes[0]*towerCameraRes[1]) > 0.00008573):
+                if(area > largestArea):
+                    largestContour = centroid,size,angle,x
                 filteredContours.append(x)
     cv2.drawContours(originalImage,filteredContours,-1,(0,0,255),2)
-    i = 1
-    for x in filteredContours:
-        centroid,size,angle = cv2.minAreaRect(filteredContours[i-1])
-        visionNetworkTable.putNumber("goal"+str(i)+"_x", centroid[0])
-        visionNetworkTable.putNumber("goal"+str(i)+"_y", centroid[1])
-        visionNetworkTable.putNumber("goal"+str(i)+"_width", size[0])
-        visionNetworkTable.putNumber("goal"+str(i)+"_height", size[1])
-        visionNetworkTable.putNumber("goal"+str(i)+"_angle", angle)
-        cv2.circle(originalImage, (int(centroid[0]),int(centroid[1])), 2, np.array([0,255,0]), 2, 8 );
-        i+=1
-    for x in range(3-i):
-        visionNetworkTable.putNumber("goal"+str(x+i)+"_x", -1)
-        visionNetworkTable.putNumber("goal"+str(x+i)+"_y", -1)
-        visionNetworkTable.putNumber("goal"+str(x+i)+"_width", -1)
-        visionNetworkTable.putNumber("goal"+str(x+i)+"_height", -1)
-        visionNetworkTable.putNumber("goal"+str(x+i)+"_angle", -1)
+    sendNumber("goal_x", round(largestContour[0][0],1))
+    sendNumber("goal_y", round(largestContour[0][1],1))
+    sendNumber("goal_width", round(largestContour[1][0],1))
+    sendNumber("goal_height", round(largestContour[1][1],1))
+    sendNumber("goal_angle", round(largestContour[2],1))
+    cv2.circle(originalImage, (int(largestContour[0][0]),int(largestContour[0][1])), 2, np.array([0,255,0]), 5, 2);
     if(TESTMODE):
         cv2.imshow("Image", originalImage)
 #end def
 def processBallCamera(camera):
     originalImage = pollCamera(camera)
     originalImage
-#end def    
-    
+#end def
+def sendNumber(name, value):
+    if(TESTMODE):
+        print name + ": " + str(value)
+    visionNetworkTable.putNumber(name,value)
+#end def
 def pollCamera(camera):
     if MANUALIMAGEMODE == True:
         imgOriginal = cv2.imread('towerImages/tower (' + str(imageNumber) + ')_960x540.jpg',1)
@@ -76,7 +74,7 @@ def calculateFPS(lastTime):
     global frames
     deltaTime = (currentTime - lastTime)
     if(deltaTime>=1):
-        fps = frames/(currentTime - lastTime)
+        fps = round(frames/(currentTime - lastTime),1)
         print "FPS: " + str(fps)
         visionNetworkTable.putNumber("fps", fps)
         frameNumber = 0
