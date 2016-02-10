@@ -60,16 +60,18 @@ def processBallCamera(camera):
     greyImage = None
     circles = None
     originalImage = pollCamera(camera)
-    greyImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2GRAY)
+    cropImage = originalImage[100:720, 0:1280]    
+    greyImage = cv2.cvtColor(cropImageImage, cv2.COLOR_BGR2GRAY)
     greyImage = cv2.blur(greyImage, (15, 15))
     circles = cv2.HoughCircles(greyImage,cv2.HOUGH_GRADIENT,1,min_dist,param_1,param_2,min_radius,max_radius)
-    circles = np.uint16(np.around(circles))
-    if len(circles) != 0:
+
+    if circles is not None:
+        circles = np.uint16(np.around(circles))       
         for i in circles[0,:]:
-            cv2.circle(originalImage,(i[0],i[1]),i[2],(0,255,0),2)
-            cv2.circle(originalImage,(i[0],i[1]),2,(0,0,255),3)
+            cv2.circle(cropImage,(i[0],i[1]),i[2],(0,255,0),2)
+            cv2.circle(cropImage,(i[0],i[1]),2,(0,0,255),3)
     if(TESTMODE):
-        cv2.imshow("Image", originalImage)
+        cv2.imshow("Image", cropImage)
     return originalImage
 #end def
 def sendNumber(name, value):
