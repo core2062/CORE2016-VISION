@@ -8,7 +8,7 @@ import platform
 from networktables import NetworkTable
 
 TESTMODE = True
-MANUALIMAGEMODE = True
+MANUALIMAGEMODE = False
 towerCameraRes = [960.0, 544.0]
 ballCameraRes = [1280.0, 720.0]
 imageNumber = 1
@@ -37,12 +37,13 @@ def processTowerCamera(camera):
                     largestContour = centroid,size,angle,x
                 filteredContours.append(x)
     cv2.drawContours(originalImage,filteredContours,-1,(0,0,255),2)
-    sendNumber("goal_x", round(largestContour[0][0],1))
-    sendNumber("goal_y", round(largestContour[0][1],1))
-    sendNumber("goal_width", round(largestContour[1][0],1))
-    sendNumber("goal_height", round(largestContour[1][1],1))
-    sendNumber("goal_angle", round(largestContour[2],1))
-    cv2.circle(originalImage, (int(largestContour[0][0]),int(largestContour[0][1])), 2, np.array([0,255,0]), 5, 2);
+    if largestContour is not None:
+        sendNumber("goal_x", round(largestContour[0][0],1))
+        sendNumber("goal_y", round(largestContour[0][1],1))
+        sendNumber("goal_width", round(largestContour[1][0],1))
+        sendNumber("goal_height", round(largestContour[1][1],1))
+        sendNumber("goal_angle", round(largestContour[2],1))
+        cv2.circle(originalImage, (int(largestContour[0][0]),int(largestContour[0][1])), 2, np.array([0,255,0]), 5, 2);
     if(TESTMODE):
         cv2.imshow("Image", originalImage)
 #end def
