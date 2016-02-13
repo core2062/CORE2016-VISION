@@ -6,10 +6,11 @@ import sys
 import numpy as np
 import platform
 from networktables import NetworkTable
+import argparse
 
 TESTMODE = True
 MANUALIMAGEMODE = False
-towerCameraRes = [960.0, 544.0]
+towerCameraRes = [960, 544]
 ballCameraRes = [1280.0, 720.0]
 imageNumber = 1
 frameNumber = 0
@@ -17,6 +18,18 @@ frames = 0
 visionNetworkTable = None
 hostname = "roboRIO-2062-FRC.local"
 
+def recordVideo(cap):
+    video  = cv2.VideoWriter(('towerVideos/towerCamera'+str(strftime("%m-%d_%H.%M", gmtime()))+'.avi'), cv2.VideoWriter_fourcc('X','V','I','D'), 14.0, (int(towerCameraRes[0]), int(towerCameraRes[1])));
+    global lastTime
+    lastTime = time.clock()
+    while True:
+        _,img = cap.read()
+        video.write(img)
+        cv2.imshow("towerCamera",img)
+        if (cv2.waitKey(1) != -1):
+            break
+    video.release()
+    cv2.destroyAllWindows()
 def processTowerCamera(camera):
     filteredContours = []
     originalImage = pollCamera(camera)
@@ -94,6 +107,9 @@ def main():
     if platform.system() == "Linux":
         global TESTMODE
         TESTMODE = False
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-r", "--record", help="Record Video")
+    args = parser.parse_args()
     towerCamera = cv2.VideoCapture(0)
     #ballCamera = cv2.VideoCapture(1)
     NetworkTable.setIPAddress(hostname)
@@ -104,20 +120,25 @@ def main():
     visionNetworkTable.putString("debug", strftime("%H:%M:%S", gmtime())+": Network Table Initialized")
     towerCamera.set(cv2.CAP_PROP_FRAME_WIDTH, towerCameraRes[0])
     towerCamera.set(cv2.CAP_PROP_FRAME_HEIGHT, towerCameraRes[1])
-    print "Tower Camera Resolution = " + str(towerCamera.get(cv2.CAP_PROP_FRAME_WIDTH)) + "x" + str(towerCamera.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    towerCameraRes[0] = towerCamera.get(cv2.CAP_PROP_FRAME_WIDTH)
+    towerCameraRes[1] = towerCamera.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    print "Tower Camera Resolution = " + str(towerCameraRes[0]) + "x" + str(towerCameraRes[1])
     visionNetworkTable.putString("debug", (strftime("%H:%M:%S", gmtime())+": Camera Res = " + str(towerCamera.get(cv2.CAP_PROP_FRAME_WIDTH)) + "x" + str(towerCamera.get(cv2.CAP_PROP_FRAME_HEIGHT))))
     lastTime = time.clock()
     if towerCamera.isOpened() == False:
         print "error: Tower Camera not initialized"
         visionNetworkTable.putString("debug", strftime("%H:%M:%S", gmtime())+": Tower Camera not initialized")
         os.execl(sys.executable, sys.executable, *sys.argv)
-    if TESTMODE:
-        cv2.namedWindow("Image",cv2.WINDOW_AUTOSIZE)
-        cv2.createTrackbar("Image #", "Image", 0, 37, changeImage)
-    while cv2.waitKey(1) != 27 and towerCamera.isOpened(): #and ballCamera.isOpened()
-        processTowerCamera(towerCamera)
-        lastTime = calculateFPS(lastTime)
-    cv2.destroyAllWindows()
+    if args.record:
+        recordVideo(towerCamera)
+    else:
+        if TESTMODE:
+            cv2.namedWindow("Image",cv2.WINDOW_AUTOSIZE)
+            cv2.createTrackbar("Image #", "Image", 0, 37, changeImage)
+        while cv2.waitKey(1) != 27 and towerCamera.isOpened(): #and ballCamera.isOpened()
+            processTowerCamera(towerCamera)
+            lastTime = calculateFPS(lastTime)
+        cv2.destroyAllWindows()
     visionNetworkTable.putString("debug", strftime("%H:%M:%S", gmtime())+": Program End")
     return
 
