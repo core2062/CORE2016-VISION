@@ -11,7 +11,7 @@ import argparse
 TESTMODE = True
 DEBUGMODE = False
 MANUALIMAGEMODE = True
-FILTERTYPE = "HSV" #"RGB" "HSL"
+FILTERTYPE = "HSL" #"RGB" "HSL"
 IMAGESOURCE = 'idealTower'
 
 #Possible Wide Screen Resolutions: 1280x720(921,600), 960x544(522,240), 800x448(358,400), 640x360(230,400)
@@ -24,7 +24,8 @@ visionNetworkTable = None
 hostname = "roboRIO-2062-FRC.local"
 
 def recordVideo(cap):
-    video = cv2.VideoWriter(('towerVideos/towerCamera'+str(strftime("%m-%d_%H.%M", gmtime()))+'.avi'), cv2.VideoWriter_fourcc('X','V','I','D'), 14.0, (int(towerCameraRes[0]), int(towerCameraRes[1])))
+    fileName = 'towerVideos/towerCamera' + str(strftime("%m-%d_%H.%M", gmtime())) + '.avi'
+    video = cv2.VideoWriter(fileName, cv2.VideoWriter_fourcc('X','V','I','D'), 14.0, (int(towerCameraRes[0]), int(towerCameraRes[1])))
     global lastTime
     lastTime = time.clock()
     while True:
@@ -60,7 +61,7 @@ def processTowerCamera(camera):
             solidity = float(contourArea)/hull_area
             cameraPixels = (towerCameraRes[0]*towerCameraRes[1])
             if (solidity < 0.4 and area/cameraPixels > 0.001714 and size[1]/cameraPixels > 0.00008573):
-                if(area > largestArea):
+                if area > largestArea:
                     largestContour = centroid,size,angle,x
                     largestArea = area
                 filteredContours.append(x)
@@ -72,8 +73,9 @@ def processTowerCamera(camera):
         sendNumber("goal_width", round(largestContour[1][0],1))
         sendNumber("goal_height", round(largestContour[1][1],1))
         sendNumber("goal_angle", round(largestContour[2],1))
-        cv2.circle(originalImage, (int(largestContour[0][0]),int(largestContour[0][1])), 2, np.array([0,255,0]), 5, 2)
-    if(TESTMODE):
+        if TESTMODE:
+            cv2.circle(originalImage, (int(largestContour[0][0]),int(largestContour[0][1])), 2, np.array([0,255,0]), 5, 2)
+    if TESTMODE:
         cv2.imshow("Image", originalImage)
 def processBallCamera(camera):
     originalImage = pollCamera(camera)
@@ -84,7 +86,7 @@ def sendNumber(name, value):
     visionNetworkTable.putNumber(name,value)
 def pollCamera(camera):
     if MANUALIMAGEMODE == True:
-        imgOriginal = cv2.imread('towerImages/' + IMAGESOURCE + '/' + IMAGESOURCE +' (' + str(imageNumber) + ')_960x540.jpg',1)
+        imgOriginal = cv2.imread('towerImages/' + IMAGESOURCE + '/' + IMAGESOURCE + ' (' + str(imageNumber) + ')_960x540.jpg',1)
     else:
         blnFrameReadSuccessfully, imgOriginal = camera.read()
         if not blnFrameReadSuccessfully or imgOriginal is None:
