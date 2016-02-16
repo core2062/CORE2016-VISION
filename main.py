@@ -9,7 +9,11 @@ from networktables import NetworkTable
 import argparse
 
 TESTMODE = True
-MANUALIMAGEMODE = False
+DEBUGMODE = False
+MANUALIMAGEMODE = True
+FILTERTYPE = "HSV" #"RGB" "HSL"
+IMAGESOURCE = 'idealTower'
+
 towerCameraRes = [960, 544]
 ballCameraRes = [1280.0, 720.0]
 imageNumber = 1
@@ -33,8 +37,16 @@ def recordVideo(cap):
 def processTowerCamera(camera):
     filteredContours = []
     originalImage = pollCamera(camera)
-    RBGThresholdImage = cv2.inRange(originalImage, np.array([197,122,69]), np.array([255, 255, 255]))
-    _,contours,_ = cv2.findContours(RBGThresholdImage, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if FILTERTYPE == "HSV":
+        HSVImage = cv2.cvtColor(originalImage,cv2.COLOR_BGR2HSV)
+        ThresholdImage = cv2.inRange(HSVImage, np.array([66,64,225]), np.array([91, 255, 255]))
+    elif FILTERTYPE == "RGB":
+        #np.array([B,G,R])
+        ThresholdImage = cv2.inRange(originalImage, np.array([204,227,0]), np.array([255, 255, 194]))
+    elif FILTERTYPE == "HSL":
+        HSLImage = cv2.cvtColor(originalImage,cv2.COLOR_BGR2HLS)
+        ThresholdImage = cv2.inRange(HSLImage, np.array([70,128,163]), np.array([99, 235, 255]))
+    _,contours,_ = cv2.findContours(ThresholdImage, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     largestArea = 0
     largestContour = None
     for x in contours:
