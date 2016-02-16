@@ -136,7 +136,10 @@ def main():
             cv2.namedWindow("Image",cv2.WINDOW_AUTOSIZE)
             cv2.createTrackbar("Image #", "Image", 0, 37, changeImage)
         while cv2.waitKey(1) != 27 and towerCamera.isOpened(): #and ballCamera.isOpened()
-            processTowerCamera(towerCamera)
+            if visionNetworkTable.getString("mode", "tower") == "tower":
+                processTowerCamera(towerCamera)
+            elif visionNetworkTable.getString("mode", "tower") == "ball":
+                processBallCamera(towerCamera)
             lastTime = calculateFPS(lastTime)
         cv2.destroyAllWindows()
     visionNetworkTable.putString("debug", strftime("%H:%M:%S", gmtime())+": Program End")
