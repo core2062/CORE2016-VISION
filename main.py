@@ -41,7 +41,7 @@ def processTowerCamera(camera):
     originalImage = pollCamera(camera)
     if FILTERTYPE == "HSV":
         HSVImage = cv2.cvtColor(originalImage,cv2.COLOR_BGR2HSV)
-        ThresholdImage = cv2.inRange(HSVImage, np.array([66,64,225]), np.array([91, 255, 255]))
+        ThresholdImage = cv2.inRange(HSVImage, np.array([66,64,225]), np.array([96, 255, 255]))
     elif FILTERTYPE == "RGB":
         #np.array([B,G,R])
         ThresholdImage = cv2.inRange(originalImage, np.array([204,227,0]), np.array([255, 255, 194]))
