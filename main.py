@@ -18,8 +18,6 @@ IMAGESOURCE = 'idealTower'
 towerCameraRes = [960, 544]
 boulderCameraRes = [960, 544]
 imageNumber = 1
-frameNumber = 0
-frames = 0
 visionNetworkTable = None
 hostname = "roboRIO-2062-FRC.local"
 
@@ -36,7 +34,7 @@ def capturePictures(towerCamera, boulderCamera, picturesPerSecond):
         imageNumber += 1
 def processTowerCamera(camera):
     filteredContours = []
-    originalImage = pollCamera(camera)
+    originalImage = pollTowerCamera()
     if FILTERTYPE == "HSV":
         HSVImage = cv2.cvtColor(originalImage,cv2.COLOR_BGR2HSV)
         ThresholdImage = cv2.inRange(HSVImage, np.array([66,64,225]), np.array([96, 255, 255]))
@@ -90,19 +88,29 @@ def sendNumber(name, value):
     if DEBUGMODE == True:
         print name + ": " + str(value)
     visionNetworkTable.putNumber(name,value)
-def pollCamera(camera):
-    if MANUALIMAGEMODE == True:
+def pollTowerCamera(forceActualCamera = False):
+    if MANUALIMAGEMODE == True and not forceActualCamera:
         imgOriginal = cv2.imread('towerImages/' + IMAGESOURCE + '/' + IMAGESOURCE + ' (' + str(imageNumber) + ')_960x540.jpg',1)
     else:
-        blnFrameReadSuccessfully, imgOriginal = camera.read()
+        blnFrameReadSuccessfully, imgOriginal = towerCamera.read()
         if not blnFrameReadSuccessfully or imgOriginal is None:
             print "error: frame not read from towerCamera"
             return
     return imgOriginal
+def pollBoulderCamera(forceActualCamera = False):
+    if MANUALIMAGEMODE == True and not forceActualCamera:
+        imgOriginal = cv2.imread('towerImages/' + IMAGESOURCE + '/' + IMAGESOURCE + ' (' + str(imageNumber) + ')_960x540.jpg',1)
+    else:
+        blnFrameReadSuccessfully, imgOriginal = boulderCamera.read()
+        if not blnFrameReadSuccessfully or imgOriginal is None:
+            print "error: frame not read from towerCamera"
+            return
+    imgOriginal = imgOriginal[(int(boulderCameraRes[1]/6-boulderCameraRes[1])):boulderCameraRes[1], 0:boulderCameraRes[0]]
+    #Area to Keep: [Top Y Value:Bottom Y Value, Top X Value:Bottom X Value]
+    return imgOriginal
 def calculateFPS(lastTime):
     currentTime = time.clock()
-    global frameNumber
-    global frames
+    global frameNumber, frames
     deltaTime = (currentTime - lastTime)
     if(deltaTime>=1):
         fps = round(frames/(currentTime - lastTime),1)
@@ -119,18 +127,20 @@ def changeImage(img):
     global imageNumber
     imageNumber = img+1
 def main():
+    global towerCamera, boulderCamera, frames, frameNumber, towerCaptureLocation, boulderCaptureLocation, visionNetworkTable
     if platform.system() == "Linux":
         global TESTMODE
         TESTMODE = False
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--capture", help="Capture images from all cameras at regular intervals")
     args = parser.parse_args()
+    frames = 0
+    frameNumber = 0
     towerCamera = cv2.VideoCapture(0)
     boulderCamera = cv2.VideoCapture(1)
     NetworkTable.setIPAddress(hostname)
     NetworkTable.setClientMode()
     NetworkTable.initialize()
-    global visionNetworkTable
     visionNetworkTable = NetworkTable.getTable('Vision')
     visionNetworkTable.putString("debug", strftime("%H:%M:%S", gmtime())+": Network Table Initialized")
     towerCamera.set(cv2.CAP_PROP_FRAME_WIDTH, towerCameraRes[0])
