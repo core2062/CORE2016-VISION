@@ -16,7 +16,7 @@ IMAGESOURCE = 'idealTower'
 
 #Possible Wide Screen Resolutions: 1280x720(921,600), 960x544(522,240), 800x448(358,400), 640x360(230,400)
 towerCameraRes = [960, 544]
-ballCameraRes = [800, 448]
+boulderCameraRes = [960, 544]
 imageNumber = 1
 frameNumber = 0
 frames = 0
@@ -49,22 +49,23 @@ def processTowerCamera(camera):
     _,contours,_ = cv2.findContours(ThresholdImage, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     largestArea = 0
     largestContour = None
-    for x in contours:
-        centroid,size,angle = cv2.minAreaRect(x)
-        area = abs(size[0]*size[1])
-        if area != 0:
-            hull = cv2.convexHull(x)
-            contourArea = cv2.contourArea(x)
-            hull_area = cv2.contourArea(hull)
-            solidity = float(contourArea)/hull_area
-            cameraPixels = (towerCameraRes[0]*towerCameraRes[1])
-            if (solidity < 0.4 and area/cameraPixels > 0.001714 and size[1]/cameraPixels > 0.00008573):
-                if area > largestArea:
-                    largestContour = centroid,size,angle,x
-                    largestArea = area
-                filteredContours.append(x)
-    cv2.drawContours(originalImage,contours,-1,(0,255,255),2)
-    cv2.drawContours(originalImage,filteredContours,-1,(0,0,255),2)
+    if contours is not None:
+        for x in contours:
+            centroid,size,angle = cv2.minAreaRect(x)
+            area = abs(size[0]*size[1])
+            if area != 0:
+                hull = cv2.convexHull(x)
+                contourArea = cv2.contourArea(x)
+                hull_area = cv2.contourArea(hull)
+                solidity = float(contourArea)/hull_area
+                cameraPixels = (towerCameraRes[0]*towerCameraRes[1])
+                if (solidity < 0.4 and area/cameraPixels > 0.001714 and size[1]/cameraPixels > 0.00008573):
+                    if area > largestArea:
+                        largestContour = centroid,size,angle,x
+                        largestArea = area
+                    filteredContours.append(x)
+        cv2.drawContours(originalImage,contours,-1,(0,255,255),2)
+        cv2.drawContours(originalImage,filteredContours,-1,(0,0,255),2)
     if largestContour is not None:
         sendNumber("goal_x", round(largestContour[0][0],1))
         sendNumber("goal_y", round(largestContour[0][1],1))
@@ -73,10 +74,17 @@ def processTowerCamera(camera):
         sendNumber("goal_angle", round(largestContour[2],1))
         if TESTMODE:
             cv2.circle(originalImage, (int(largestContour[0][0]),int(largestContour[0][1])), 2, np.array([0,255,0]), 5, 2)
+    else:
+        sendNumber("goal_x", -1)
+        sendNumber("goal_y", -1)
+        sendNumber("goal_width", -1)
+        sendNumber("goal_height", -1)
+        sendNumber("goal_angle", -1)
     if TESTMODE:
         cv2.imshow("Image", originalImage)
-def processBallCamera(camera):
-    originalImage = pollCamera(camera)
+def processBoulderCamera(camera):
+    originalImage = pollBoulderCamera()
+    cv2.imshow("Image", originalImage)
     return originalImage
 def sendNumber(name, value):
     if DEBUGMODE == True:
@@ -118,7 +126,7 @@ def main():
     parser.add_argument("-c", "--capture", help="Capture images from all cameras at regular intervals")
     args = parser.parse_args()
     towerCamera = cv2.VideoCapture(0)
-    #ballCamera = cv2.VideoCapture(1)
+    boulderCamera = cv2.VideoCapture(1)
     NetworkTable.setIPAddress(hostname)
     NetworkTable.setClientMode()
     NetworkTable.initialize()
@@ -132,6 +140,9 @@ def main():
     print "Tower Camera Resolution = " + str(towerCameraRes[0]) + "x" + str(towerCameraRes[1])
     visionNetworkTable.putString("debug", (strftime("%H:%M:%S", gmtime())+": Camera Res = " + str(towerCameraRes[0]) + "x" + str(towerCameraRes[1])))
     lastTime = time.clock()
+    dateTime = str(strftime("%m-%d_%H.%M", gmtime()))
+    towerCaptureLocation = 'capturedImages/tower '  + dateTime+ '/'
+    boulderCaptureLocation = 'capturedImages/boulder '  + dateTime + '/'
     if towerCamera.isOpened() == False:
         print "error: Tower Camera not initialized"
         visionNetworkTable.putString("debug", strftime("%H:%M:%S", gmtime())+": Tower Camera not initialized")
@@ -145,11 +156,11 @@ def main():
             cv2.namedWindow("Image",cv2.WINDOW_AUTOSIZE)
             if MANUALIMAGEMODE:
                 cv2.createTrackbar("Image #", "Image", 0, 54, changeImage)
-        while cv2.waitKey(1) != 27 and towerCamera.isOpened(): #and ballCamera.isOpened()
+        while cv2.waitKey(1) != 27 and towerCamera.isOpened(): #and boulderCamera.isOpened()
             if visionNetworkTable.getString("mode", "tower") == "tower":
                 processTowerCamera(towerCamera)
-            elif visionNetworkTable.getString("mode", "tower") == "ball":
-                processBallCamera(towerCamera)
+            elif visionNetworkTable.getString("mode", "tower") == "boulder":
+                processBoulderCamera(towerCamera)
             lastTime = calculateFPS(lastTime)
         cv2.destroyAllWindows()
     visionNetworkTable.putString("debug", strftime("%H:%M:%S", gmtime())+": Program End")
