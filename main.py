@@ -23,19 +23,17 @@ frames = 0
 visionNetworkTable = None
 hostname = "roboRIO-2062-FRC.local"
 
-def recordVideo(cap):
-    fileName = 'towerVideos/towerCamera' + str(strftime("%m-%d_%H.%M", gmtime())) + '.avi'
-    video = cv2.VideoWriter(fileName, cv2.VideoWriter_fourcc('X','V','I','D'), 14.0, (int(towerCameraRes[0]), int(towerCameraRes[1])))
-    global lastTime
+def capturePictures(towerCamera, boulderCamera, picturesPerSecond):
     lastTime = time.clock()
-    while True:
-        _,img = cap.read()
-        video.write(img)
-        cv2.imshow("towerCamera",img)
-        if (cv2.waitKey(1) != -1):
-            break
-    video.release()
-    cv2.destroyAllWindows()
+    imageNumber = 0
+    while(True):
+        towerCameraImage = pollTowerCamera(True)
+        boulderCameraImage = pollBoulderCamera(True)
+        while time.clock() - lastTime < 1.0/picturesPerSecond:
+            time.sleep(0.001)
+        cv2.imwrite(towerCaptureLocation + 'tower (' + str(imageNumber) + ').jpg', towerCameraImage)
+        cv2.imwrite(boulderCaptureLocation + 'boulder (' + str(imageNumber) + ').jpg', boulderCameraImage)
+        imageNumber += 1
 def processTowerCamera(camera):
     filteredContours = []
     originalImage = pollCamera(camera)
@@ -117,7 +115,7 @@ def main():
         global TESTMODE
         TESTMODE = False
     parser = argparse.ArgumentParser()
-    parser.add_argument("-r", "--record", help="Record Video")
+    parser.add_argument("-c", "--capture", help="Capture images from all cameras at regular intervals")
     args = parser.parse_args()
     towerCamera = cv2.VideoCapture(0)
     #ballCamera = cv2.VideoCapture(1)
@@ -138,8 +136,10 @@ def main():
         print "error: Tower Camera not initialized"
         visionNetworkTable.putString("debug", strftime("%H:%M:%S", gmtime())+": Tower Camera not initialized")
         os.execl(sys.executable, sys.executable, *sys.argv)
-    if args.record:
-        recordVideo(towerCamera)
+    if args.capture:
+        print "Capturing Tower Images to: " + towerCaptureLocation
+        print "Capturing Boulder Images to: " + boulderCaptureLocation
+        capturePictures(towerCamera)
     else:
         if TESTMODE:
             cv2.namedWindow("Image",cv2.WINDOW_AUTOSIZE)
