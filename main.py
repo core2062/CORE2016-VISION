@@ -11,7 +11,7 @@ import argparse
 TESTMODE = True
 DEBUGMODE = False
 MANUALIMAGEMODE = True
-FILTERTYPE = "HSV" #"RGB" "HSL"
+FILTERTYPE = "HSV" #"HSV", "RGB", "HSL"
 IMAGESOURCE = 'idealTower'
 
 #Possible Wide Screen Resolutions: 1280x720(921,600), 960x544(522,240), 800x448(358,400), 640x360(230,400)
@@ -35,13 +35,13 @@ def capturePictures(towerCamera, boulderCamera, picturesPerSecond):
 def processTowerCamera(camera):
     filteredContours = []
     originalImage = pollTowerCamera()
-    if FILTERTYPE == "HSV":
+    if FILTERTYPE == "HSV": #Filter with the most accurate tower detection
         HSVImage = cv2.cvtColor(originalImage,cv2.COLOR_BGR2HSV)
         ThresholdImage = cv2.inRange(HSVImage, np.array([66,64,225]), np.array([96, 255, 255]))
-    elif FILTERTYPE == "RGB":
+    elif FILTERTYPE == "RGB": #Overall fastest filter
         #np.array([B,G,R])
         ThresholdImage = cv2.inRange(originalImage, np.array([204,227,0]), np.array([255, 255, 194]))
-    elif FILTERTYPE == "HSL":
+    elif FILTERTYPE == "HSL": #Filter with the most consistent tower detection
         HSLImage = cv2.cvtColor(originalImage,cv2.COLOR_BGR2HLS)
         ThresholdImage = cv2.inRange(HSLImage, np.array([70,128,163]), np.array([99, 235, 255]))
     _,contours,_ = cv2.findContours(ThresholdImage, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
