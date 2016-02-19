@@ -11,7 +11,7 @@ import argparse
 TESTMODE = True
 DEBUGMODE = False
 MANUALIMAGEMODE = True
-FILTERTYPE = "HSL" #"RGB" "HSL"
+FILTERTYPE = "HSV" #"RGB" "HSL"
 IMAGESOURCE = 'idealTower'
 
 #Possible Wide Screen Resolutions: 1280x720(921,600), 960x544(522,240), 800x448(358,400), 640x360(230,400)
@@ -61,9 +61,12 @@ def processTowerCamera(camera):
                     if area > largestArea:
                         largestContour = centroid,size,angle,x
                         largestArea = area
-                    filteredContours.append(x)
-        cv2.drawContours(originalImage,contours,-1,(0,255,255),2)
-        cv2.drawContours(originalImage,filteredContours,-1,(0,0,255),2)
+                    if TESTMODE:
+                        filteredContours.append(x)
+        if TESTMODE:
+            if DEBUGMODE:
+                cv2.drawContours(originalImage,contours,-1,(0,255,255),2)
+            cv2.drawContours(originalImage,filteredContours,-1,(0,0,255),2)
     if largestContour is not None:
         sendNumber("goal_x", round(largestContour[0][0],1))
         sendNumber("goal_y", round(largestContour[0][1],1))
