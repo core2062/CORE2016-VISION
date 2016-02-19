@@ -132,8 +132,10 @@ def changeImage(img):
 def main():
     global towerCamera, boulderCamera, frames, frameNumber, towerCaptureLocation, boulderCaptureLocation, visionNetworkTable
     if platform.system() == "Linux":
-        global TESTMODE
+        global TESTMODE, MANUALIMAGEMODE, DEBUGMODE
         TESTMODE = False
+        MANUALIMAGEMODE = False
+        DEBUGMODE = False
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--capture", help="Capture images from all cameras at regular intervals")
     args = parser.parse_args()
