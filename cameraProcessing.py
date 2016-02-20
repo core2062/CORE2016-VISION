@@ -1,4 +1,5 @@
 import time
+import platform
 import os
 import cv2
 import sys
@@ -33,7 +34,7 @@ class camera(object):
             cv2.namedWindow("Image",cv2.WINDOW_AUTOSIZE)
             if MANUALIMAGEMODE:
                 cv2.createTrackbar("Image #", "Image", 0, 54, self.changeImage)
-        cameraTime = time.clock()
+        cameraTime = self.getTime()
         pictureNumber = 1
         towerCamera.set(cv2.CAP_PROP_FRAME_WIDTH, self.towerCameraRes[0])
         towerCamera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.towerCameraRes[1])
@@ -46,7 +47,7 @@ class camera(object):
             self.boulderCameraRes[0] = boulderCamera.get(cv2.CAP_PROP_FRAME_WIDTH)
             self.boulderCameraRes[1] = boulderCamera.get(cv2.CAP_PROP_FRAME_HEIGHT)
             print "Boulder Camera Resolution = " + str(self.boulderCameraRes[0]) + "x" + str(self.boulderCameraRes[1])
-        lastTime = time.clock()
+        lastTime = self.getTime()
         if not towerCamera.isOpened():
             print "error: Tower Camera not initialized"
             os.execl(sys.executable, sys.executable, *sys.argv)
@@ -59,7 +60,7 @@ class camera(object):
     def capturePictures(self, picturesPerSecond, image = None):
         global pictureNumber, cameraTime
         if image is None:
-            lastTime = time.clock()
+            lastTime = self.getTime()
             if not os.path.exists(self.towerCaptureLocation):
                 os.makedirs(self.towerCaptureLocation)
             if not SINGLECAMERAMODE and not os.path.exists(self.boulderCaptureLocation):
@@ -67,16 +68,16 @@ class camera(object):
             while(True):
                 towerCameraImage = self.pollTower(True)
                 boulderCameraImage = self.pollBoulder(True)
-                while time.clock() - lastTime < 1.0/picturesPerSecond:
+                while self.getTime() - lastTime < 1.0/picturesPerSecond:
                     time.sleep(0.1)
-                lastTime = time.clock()
+                lastTime = self.getTime()
                 cv2.imwrite(self.towerCaptureLocation + 'tower (' + str(pictureNumber) + ').jpg', towerCameraImage)
                 if not SINGLECAMERAMODE:
                     cv2.imwrite(self.boulderCaptureLocation + 'boulder (' + str(pictureNumber) + ').jpg', boulderCameraImage)
                 pictureNumber += 1
         else:
-            if not time.clock() - cameraTime < 1.0/picturesPerSecond:
-                cameraTime = time.clock()
+            if not self.getTime() - cameraTime < 1.0/picturesPerSecond:
+                cameraTime = self.getTime()
                 if not os.path.exists(self.outputCaptureLocation):
                     os.makedirs(self.outputCaptureLocation)
                 cv2.imwrite(self.outputCaptureLocation + 'output (' + str(pictureNumber) + ').jpg', image)
@@ -174,3 +175,8 @@ class camera(object):
         return towerCamera.isOpened()
     def isBoulderCameraOpen(self):
         return boulderCamera.isOpened()
+    def getTime(self):
+        if platform.system() == "Linux":
+            return time.time()
+        else:
+            return time.clock()

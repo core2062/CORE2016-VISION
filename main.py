@@ -22,11 +22,10 @@ hostname = "roboRIO-2062-FRC.local"
 NetworkTable.setIPAddress(hostname)
 NetworkTable.setClientMode()
 NetworkTable.initialize()
-
 visionNetworkTable = NetworkTable.getTable("vision")
 
 def calculateFPS(lastTime):
-    currentTime = time.clock()
+    currentTime = camera.getTime()
     global frames
     deltaTime = (currentTime - lastTime)
     if(deltaTime>=1):
@@ -39,7 +38,7 @@ def calculateFPS(lastTime):
         frames += 1.0
         return lastTime
 def main():
-    global frames, pictureNumber, towerCaptureLocation, boulderCaptureLocation, outputCaptureLocation, cameraTime, visionNetworkTable
+    global frames, pictureNumber, towerCaptureLocation, boulderCaptureLocation, outputCaptureLocation, cameraTime, visionNetworkTable, camera
     if platform.system() == "Linux":
         GPIO.setmode(GPIO.BOARD)
         GPIO.setwarnings(False)
@@ -61,7 +60,7 @@ def main():
     parser.add_argument('-c', action='store', dest="picturesPerSecond", help='Capture images from all cameras at a rate given by the parameter in pictures/second', type=int)
     args = parser.parse_args()
     pictureNumber = 0
-    lastFPSTime = time.clock()
+    lastFPSTime = camera.getTime()
     frames = 0
     if args.picturesPerSecond or CAPTUREMODE:
         if CAPTUREMODE:
