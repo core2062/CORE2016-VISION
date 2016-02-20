@@ -14,16 +14,22 @@ class camera(object):
     TOWERIMAGESOURCE = 'idealTower'
     BOULDERIMAGESOURCE = 'boulderLaserFilter'
     imageNumber = 1
-    def __init__(self, Singlecameramode, Filtertype, Testmode, Manualimagemode, Debugmode, VisionNetworkTable):
-        global towerCamera, boulderCamera, frames, lastTime, towerCaptureLocation, boulderCaptureLocation, outputCaptureLocation, cameraTime
-        global SINGLECAMERAMODE, FILTERTYPE, TESTMODE, MANUALIMAGEMODE, DEBUGMODE, visionNetworkTable, pictureNumber
+    dateTime = str(time.strftime("%m-%d_%H-%M", time.gmtime()))
+    towerCaptureLocation = 'capturedImages/tower '  + dateTime+ '/'
+    boulderCaptureLocation = 'capturedImages/boulder '  + dateTime + '/'
+    outputCaptureLocation = 'capturedImages/output '  + dateTime + '/'
+    def __init__(self, Singlecameramode, Filtertype, Testmode, Manualimagemode, Debugmode, Capturemode, Outputcapturemode, VisionNetworkTable):
+        global towerCamera, boulderCamera, frames, lastTime, cameraTime
+        global SINGLECAMERAMODE, FILTERTYPE, TESTMODE, MANUALIMAGEMODE, DEBUGMODE, CAPTUREMODE, OUTPUTCAPTUREMODE, visionNetworkTable, pictureNumber
         SINGLECAMERAMODE = Singlecameramode
         FILTERTYPE = Filtertype
         TESTMODE = Testmode
         MANUALIMAGEMODE = Manualimagemode
         DEBUGMODE = Debugmode
+        CAPTUREMODE = Capturemode
+        OUTPUTCAPTUREMODE = Outputcapturemode
         visionNetworkTable = VisionNetworkTable
-        if TESTMODE:
+        if TESTMODE and not CAPTUREMODE:
             cv2.namedWindow("Image",cv2.WINDOW_AUTOSIZE)
             if MANUALIMAGEMODE:
                 cv2.createTrackbar("Image #", "Image", 0, 54, self.changeImage)
@@ -35,17 +41,12 @@ class camera(object):
         self.towerCameraRes[1] = towerCamera.get(cv2.CAP_PROP_FRAME_HEIGHT)
         print "Tower Camera Resolution = " + str(self.towerCameraRes[0]) + "x" + str(self.towerCameraRes[1])
         if not SINGLECAMERAMODE:
-            boulderCamera = cv2.VideoCapture(1)
             boulderCamera.set(cv2.CAP_PROP_FRAME_WIDTH, self.boulderCameraRes[0])
             boulderCamera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.boulderCameraRes[1])
             self.boulderCameraRes[0] = boulderCamera.get(cv2.CAP_PROP_FRAME_WIDTH)
             self.boulderCameraRes[1] = boulderCamera.get(cv2.CAP_PROP_FRAME_HEIGHT)
             print "Boulder Camera Resolution = " + str(self.boulderCameraRes[0]) + "x" + str(self.boulderCameraRes[1])
         lastTime = time.clock()
-        dateTime = str(time.strftime("%m-%d_%H-%M", time.gmtime()))
-        towerCaptureLocation = 'capturedImages/tower '  + dateTime+ '/'
-        boulderCaptureLocation = 'capturedImages/boulder '  + dateTime + '/'
-        outputCaptureLocation = 'capturedImages/output '  + dateTime + '/'
         if not towerCamera.isOpened():
             print "error: Tower Camera not initialized"
             os.execl(sys.executable, sys.executable, *sys.argv)
@@ -59,25 +60,25 @@ class camera(object):
         global pictureNumber, cameraTime
         if image is None:
             lastTime = time.clock()
-            if not os.path.exists(towerCaptureLocation):
-                os.makedirs(towerCaptureLocation)
-            if not SINGLECAMERAMODE and not os.path.exists(boulderCaptureLocation):
-                os.makedirs(boulderCaptureLocation)
+            if not os.path.exists(self.towerCaptureLocation):
+                os.makedirs(self.towerCaptureLocation)
+            if not SINGLECAMERAMODE and not os.path.exists(self.boulderCaptureLocation):
+                os.makedirs(self.boulderCaptureLocation)
             while(True):
                 towerCameraImage = self.pollTower(True)
                 boulderCameraImage = self.pollBoulder(True)
                 while time.clock() - lastTime < 1.0/picturesPerSecond:
                     time.sleep(0.001)
                 lastTime = time.clock()
-                cv2.imwrite(towerCaptureLocation + 'tower (' + str(pictureNumber) + ').jpg', towerCameraImage)
-                cv2.imwrite(boulderCaptureLocation + 'boulder (' + str(pictureNumber) + ').jpg', boulderCameraImage)
+                cv2.imwrite(self.towerCaptureLocation + 'tower (' + str(pictureNumber) + ').jpg', towerCameraImage)
+                cv2.imwrite(self.boulderCaptureLocation + 'boulder (' + str(pictureNumber) + ').jpg', boulderCameraImage)
                 pictureNumber += 1
         else:
             if not time.clock() - cameraTime < 1.0/picturesPerSecond:
                 cameraTime = time.clock()
-                if not os.path.exists(outputCaptureLocation):
-                    os.makedirs(outputCaptureLocation)
-                cv2.imwrite(outputCaptureLocation + 'output (' + str(pictureNumber) + ').jpg', image)
+                if not os.path.exists(self.outputCaptureLocation):
+                    os.makedirs(self.outputCaptureLocation)
+                cv2.imwrite(self.outputCaptureLocation + 'output (' + str(pictureNumber) + ').jpg', image)
                 pictureNumber += 1
     def processTower(self):
         filteredContours = []
@@ -129,16 +130,18 @@ class camera(object):
             self.sendNumber("goal_angle", -1)
         if TESTMODE:
             cv2.imshow("Image", originalImage)
-        self.capturePictures(1, originalImage)
+        if OUTPUTCAPTUREMODE:
+            self.capturePictures(1, originalImage)
     def processBoulder(self):
         originalImage = self.pollBoulder()
         greyImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2GRAY)
         ThresholdImage = cv2.inRange(greyImage, 60, 255)
         if TESTMODE:    
             cv2.imshow("Image", ThresholdImage)
-        self.capturePictures(1, originalImage)
+        if OUTPUTCAPTUREMODE:
+            self.capturePictures(1, originalImage)
     def pollTower(self, forceActualCamera = False):
-        if MANUALIMAGEMODE  and not forceActualCamera:
+        if MANUALIMAGEMODE and not forceActualCamera:
             imgOriginal = cv2.imread('towerImages/' + self.TOWERIMAGESOURCE + '/' + self.TOWERIMAGESOURCE + ' (' + str(self.imageNumber) + ')_960x540.jpg',1)
             if imgOriginal is None:
                 print "Error: towerCamera frame not read from file"
