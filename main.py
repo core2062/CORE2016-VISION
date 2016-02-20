@@ -12,26 +12,41 @@ TESTMODE = True
 DEBUGMODE = False
 MANUALIMAGEMODE = True
 FILTERTYPE = "HSV" #"HSV", "RGB", "HSL"
-IMAGESOURCE = 'idealTower'
+SINGLECAMERAMODE = True
+TOWERIMAGESOURCE = 'idealTower'
+BOULDERIMAGESOURCE = 'boulderLaserFilter'
 
 #Possible Wide Screen Resolutions: 1280x720(921,600), 960x544(522,240), 800x448(358,400), 640x360(230,400)
 towerCameraRes = [960, 544]
-boulderCameraRes = [960, 544]
+boulderCameraRes = [800, 448]
 imageNumber = 1
 visionNetworkTable = None
 hostname = "roboRIO-2062-FRC.local"
 
-def capturePictures(towerCamera, boulderCamera, picturesPerSecond):
-    lastTime = time.clock()
-    imageNumber = 0
-    while(True):
-        towerCameraImage = pollTowerCamera(True)
-        boulderCameraImage = pollBoulderCamera(True)
-        while time.clock() - lastTime < 1.0/picturesPerSecond:
-            time.sleep(0.001)
-        cv2.imwrite(towerCaptureLocation + 'tower (' + str(imageNumber) + ').jpg', towerCameraImage)
-        cv2.imwrite(boulderCaptureLocation + 'boulder (' + str(imageNumber) + ').jpg', boulderCameraImage)
-        imageNumber += 1
+def capturePictures(picturesPerSecond, image = None):
+    global pictureNumber, cameraTime
+    if image is None:
+        lastTime = time.clock()
+        if not os.path.exists(towerCaptureLocation):
+            os.makedirs(towerCaptureLocation)
+        if not SINGLECAMERAMODE and not os.path.exists(boulderCaptureLocation):
+            os.makedirs(boulderCaptureLocation)
+        while(True):
+            towerCameraImage = pollTowerCamera(True)
+            boulderCameraImage = pollBoulderCamera(True)
+            while time.clock() - lastTime < 1.0/picturesPerSecond:
+                time.sleep(0.001)
+            lastTime = time.clock()
+            cv2.imwrite(towerCaptureLocation + 'tower (' + str(pictureNumber) + ').jpg', towerCameraImage)
+            cv2.imwrite(boulderCaptureLocation + 'boulder (' + str(pictureNumber) + ').jpg', boulderCameraImage)
+            pictureNumber += 1
+    else:
+        if not time.clock() - cameraTime < 1.0/picturesPerSecond:
+            cameraTime = time.clock()
+            if not os.path.exists(outputCaptureLocation):
+                os.makedirs(outputCaptureLocation)
+            cv2.imwrite(outputCaptureLocation + 'output (' + str(pictureNumber) + ').jpg', image)
+            pictureNumber += 1
 def processTowerCamera(camera):
     filteredContours = []
     originalImage = pollTowerCamera()
@@ -39,8 +54,7 @@ def processTowerCamera(camera):
         HSVImage = cv2.cvtColor(originalImage,cv2.COLOR_BGR2HSV)
         ThresholdImage = cv2.inRange(HSVImage, np.array([66,64,225]), np.array([96, 255, 255]))
     elif FILTERTYPE == "RGB": #Overall fastest filter
-        #np.array([B,G,R])
-        ThresholdImage = cv2.inRange(originalImage, np.array([204,227,0]), np.array([255, 255, 194]))
+        ThresholdImage = cv2.inRange(originalImage, np.array([204,227,0]), np.array([255, 255, 194])) #np.array([B,G,R])
     elif FILTERTYPE == "HSL": #Filter with the most consistent tower detection
         HSLImage = cv2.cvtColor(originalImage,cv2.COLOR_BGR2HLS)
         ThresholdImage = cv2.inRange(HSLImage, np.array([70,128,163]), np.array([99, 235, 255]))
@@ -83,89 +97,109 @@ def processTowerCamera(camera):
         sendNumber("goal_angle", -1)
     if TESTMODE:
         cv2.imshow("Image", originalImage)
+    capturePictures(1, originalImage)
 def processBoulderCamera(camera):
     originalImage = pollBoulderCamera()
-    cv2.imshow("Image", originalImage)
-    return originalImage
+    greyImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2GRAY)
+    ThresholdImage = cv2.inRange(greyImage, 60, 255)
+    if TESTMODE:    
+        cv2.imshow("Image", ThresholdImage)
+    capturePictures(1, originalImage)
 def sendNumber(name, value):
-    if DEBUGMODE == True:
+    if DEBUGMODE:
         print name + ": " + str(value)
     visionNetworkTable.putNumber(name,value)
 def pollTowerCamera(forceActualCamera = False):
-    if MANUALIMAGEMODE == True and not forceActualCamera:
-        imgOriginal = cv2.imread('towerImages/' + IMAGESOURCE + '/' + IMAGESOURCE + ' (' + str(imageNumber) + ')_960x540.jpg',1)
+    if MANUALIMAGEMODE  and not forceActualCamera:
+        imgOriginal = cv2.imread('towerImages/' + TOWERIMAGESOURCE + '/' + TOWERIMAGESOURCE + ' (' + str(imageNumber) + ')_960x540.jpg',1)
+        if imgOriginal is None:
+            print "Error: towerCamera frame not read from file"
+            return
     else:
         blnFrameReadSuccessfully, imgOriginal = towerCamera.read()
         if not blnFrameReadSuccessfully or imgOriginal is None:
-            print "error: frame not read from towerCamera"
+            print "Error: frame not read from towerCamera"
             return
     return imgOriginal
 def pollBoulderCamera(forceActualCamera = False):
-    if MANUALIMAGEMODE == True and not forceActualCamera:
-        imgOriginal = cv2.imread('towerImages/' + IMAGESOURCE + '/' + IMAGESOURCE + ' (' + str(imageNumber) + ')_960x540.jpg',1)
+    if MANUALIMAGEMODE and not forceActualCamera:
+        imgOriginal = cv2.imread('boulderImages/' + BOULDERIMAGESOURCE + '/' + BOULDERIMAGESOURCE + ' (' + str(imageNumber) + ').jpg',1)
+        if imgOriginal is None:
+            print "Error: boulderCamera frame not read from file"
+            return
     else:
-        blnFrameReadSuccessfully, imgOriginal = boulderCamera.read()
+        if SINGLECAMERAMODE:
+            blnFrameReadSuccessfully, imgOriginal = towerCamera.read()
+        else:
+            blnFrameReadSuccessfully, imgOriginal = boulderCamera.read()
         if not blnFrameReadSuccessfully or imgOriginal is None:
-            print "error: frame not read from towerCamera"
+            print "Error: frame not read from boulderCamera"
             return
     imgOriginal = imgOriginal[(int(boulderCameraRes[1]/6-boulderCameraRes[1])):boulderCameraRes[1], 0:boulderCameraRes[0]]
     #Area to Keep: [Top Y Value:Bottom Y Value, Top X Value:Bottom X Value]
     return imgOriginal
 def calculateFPS(lastTime):
     currentTime = time.clock()
-    global frameNumber, frames
+    global frames
     deltaTime = (currentTime - lastTime)
     if(deltaTime>=1):
         fps = round(frames/(currentTime - lastTime),1)
         print "FPS: " + str(fps)
         visionNetworkTable.putNumber("fps", fps)
-        frameNumber = 0
         frames = 1.0
         return currentTime
     else:
         frames += 1.0
-        frameNumber+=1
         return lastTime
 def changeImage(img):
     global imageNumber
     imageNumber = img+1
 def main():
-    global towerCamera, boulderCamera, frames, frameNumber, towerCaptureLocation, boulderCaptureLocation, visionNetworkTable
+    global towerCamera, boulderCamera, frames, pictureNumber, towerCaptureLocation, boulderCaptureLocation, outputCaptureLocation, visionNetworkTable, cameraTime
     if platform.system() == "Linux":
         global TESTMODE, MANUALIMAGEMODE, DEBUGMODE
         TESTMODE = False
         MANUALIMAGEMODE = False
         DEBUGMODE = False
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--capture", help="Capture images from all cameras at regular intervals")
+    parser = argparse.ArgumentParser(description='CORE 2062\'s 2016 Vision Processing System - Developed by Andrew Kempen')
+    parser.add_argument('-c', action='store', dest="picturesPerSecond", help='Capture images from all cameras at a rate given by the parameter in pictures/second', type=int)
     args = parser.parse_args()
+    pictureNumber = 0
     frames = 0
-    frameNumber = 0
-    towerCamera = cv2.VideoCapture(0)
-    boulderCamera = cv2.VideoCapture(1)
+    cameraTime = time.clock()
     NetworkTable.setIPAddress(hostname)
     NetworkTable.setClientMode()
     NetworkTable.initialize()
     visionNetworkTable = NetworkTable.getTable('Vision')
     visionNetworkTable.putString("debug", strftime("%H:%M:%S", gmtime())+": Network Table Initialized")
+    towerCamera = cv2.VideoCapture(0)
     towerCamera.set(cv2.CAP_PROP_FRAME_WIDTH, towerCameraRes[0])
     towerCamera.set(cv2.CAP_PROP_FRAME_HEIGHT, towerCameraRes[1])
     towerCameraRes[0] = towerCamera.get(cv2.CAP_PROP_FRAME_WIDTH)
     towerCameraRes[1] = towerCamera.get(cv2.CAP_PROP_FRAME_HEIGHT)
     print "Tower Camera Resolution = " + str(towerCameraRes[0]) + "x" + str(towerCameraRes[1])
+    if not SINGLECAMERAMODE:
+        boulderCamera = cv2.VideoCapture(1)
+        boulderCamera.set(cv2.CAP_PROP_FRAME_WIDTH, boulderCameraRes[0])
+        boulderCamera.set(cv2.CAP_PROP_FRAME_HEIGHT, boulderCameraRes[1])
+        boulderCameraRes[0] = boulderCamera.get(cv2.CAP_PROP_FRAME_WIDTH)
+        boulderCameraRes[1] = boulderCamera.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        print "Boulder Camera Resolution = " + str(boulderCameraRes[0]) + "x" + str(boulderCameraRes[1])
     visionNetworkTable.putString("debug", (strftime("%H:%M:%S", gmtime())+": Camera Res = " + str(towerCameraRes[0]) + "x" + str(towerCameraRes[1])))
     lastTime = time.clock()
-    dateTime = str(strftime("%m-%d_%H.%M", gmtime()))
+    dateTime = str(strftime("%m-%d_%H-%M", gmtime()))
     towerCaptureLocation = 'capturedImages/tower '  + dateTime+ '/'
     boulderCaptureLocation = 'capturedImages/boulder '  + dateTime + '/'
+    outputCaptureLocation = 'capturedImages/output '  + dateTime + '/'
     if towerCamera.isOpened() == False:
         print "error: Tower Camera not initialized"
         visionNetworkTable.putString("debug", strftime("%H:%M:%S", gmtime())+": Tower Camera not initialized")
         os.execl(sys.executable, sys.executable, *sys.argv)
-    if args.capture:
+    if args.picturesPerSecond:
         print "Capturing Tower Images to: " + towerCaptureLocation
-        print "Capturing Boulder Images to: " + boulderCaptureLocation
-        capturePictures(towerCamera)
+        if not SINGLECAMERAMODE:
+            print "Capturing Boulder Images to: " + boulderCaptureLocation
+        capturePictures(args.picturesPerSecond)
     else:
         if TESTMODE:
             cv2.namedWindow("Image",cv2.WINDOW_AUTOSIZE)
