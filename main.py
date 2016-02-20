@@ -63,7 +63,7 @@ def main():
     frames = 0
     if args.picturesPerSecond or CAPTUREMODE:
         if CAPTUREMODE:
-            picturesPerSec = 0.5
+            picturesPerSec = 1
         else:
             picturesPerSec = args.picturesPerSecond
         camera.capturePictures(picturesPerSec)
