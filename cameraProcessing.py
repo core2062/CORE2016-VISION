@@ -68,10 +68,11 @@ class camera(object):
                 towerCameraImage = self.pollTower(True)
                 boulderCameraImage = self.pollBoulder(True)
                 while time.clock() - lastTime < 1.0/picturesPerSecond:
-                    time.sleep(0.001)
+                    time.sleep(0.1)
                 lastTime = time.clock()
                 cv2.imwrite(self.towerCaptureLocation + 'tower (' + str(pictureNumber) + ').jpg', towerCameraImage)
-                cv2.imwrite(self.boulderCaptureLocation + 'boulder (' + str(pictureNumber) + ').jpg', boulderCameraImage)
+                if not SINGLECAMERAMODE:
+                    cv2.imwrite(self.boulderCaptureLocation + 'boulder (' + str(pictureNumber) + ').jpg', boulderCameraImage)
                 pictureNumber += 1
         else:
             if not time.clock() - cameraTime < 1.0/picturesPerSecond:

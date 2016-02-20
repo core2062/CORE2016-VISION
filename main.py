@@ -1,6 +1,5 @@
 import cameraProcessing
 import cv2
-from __builtin__ import False
 try:
     import RPi.GPIO as GPIO
 except ImportError:
@@ -15,7 +14,7 @@ DEBUGMODE = False
 MANUALIMAGEMODE = False
 FILTERTYPE = "HSV" #"HSV", "RGB", "HSL"
 SINGLECAMERAMODE = True
-CAPTUREMODE = True
+CAPTUREMODE = False
 OUTPUTCAPTUREMODE = False
 
 global visionNetworkTable
@@ -66,7 +65,7 @@ def main():
     frames = 0
     if args.picturesPerSecond or CAPTUREMODE:
         if CAPTUREMODE:
-            picturesPerSec = 1
+            picturesPerSec = 0.5
         else:
             picturesPerSec = args.picturesPerSecond
         print "Capturing Tower Images to: " + camera.towerCaptureLocation
