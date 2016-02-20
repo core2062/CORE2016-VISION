@@ -43,13 +43,13 @@ def main():
     global frames, pictureNumber, towerCaptureLocation, boulderCaptureLocation, outputCaptureLocation, cameraTime, visionNetworkTable
     if platform.system() == "Linux":
         GPIO.setmode(GPIO.BOARD)
+        GPIO.setwarnings(False)
         GPIO.setup(11, GPIO.IN)
         GPIO.setup(12, GPIO.OUT)
         GPIO.output(12, GPIO.HIGH)
         if GPIO.input(11):
             global CAPTUREMODE
             CAPTUREMODE = True
-            print "HAHDJASHKDHA"
         GPIO.output(12, GPIO.LOW)
         global TESTMODE, MANUALIMAGEMODE, DEBUGMODE
         TESTMODE = False
