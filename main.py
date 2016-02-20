@@ -13,7 +13,6 @@ TESTMODE = True
 DEBUGMODE = False
 MANUALIMAGEMODE = False
 FILTERTYPE = "HSV" #"HSV", "RGB", "HSL"
-SINGLECAMERAMODE = False
 CAPTUREMODE = False
 OUTPUTCAPTUREMODE = False
 
@@ -53,7 +52,7 @@ def main():
         TESTMODE = False
         MANUALIMAGEMODE = False
         DEBUGMODE = False
-    camera = cameraProcessing.camera(SINGLECAMERAMODE, FILTERTYPE, TESTMODE, MANUALIMAGEMODE, DEBUGMODE, CAPTUREMODE, OUTPUTCAPTUREMODE, visionNetworkTable)
+    camera = cameraProcessing.camera(FILTERTYPE, TESTMODE, MANUALIMAGEMODE, DEBUGMODE, CAPTUREMODE, OUTPUTCAPTUREMODE, visionNetworkTable)
     visionNetworkTable.putString("debug", time.strftime("%H:%M:%S", time.gmtime())+": Network Table Initialized")
     visionNetworkTable.putString("debug", (time.strftime("%H:%M:%S", time.gmtime())+": Camera Res = " + str(camera.towerCameraRes[0]) + "x" + str(camera.towerCameraRes[1])))
     parser = argparse.ArgumentParser(description='CORE 2062\'s 2016 Vision Processing System - Developed by Andrew Kempen')
@@ -67,9 +66,6 @@ def main():
             picturesPerSec = 0.5
         else:
             picturesPerSec = args.picturesPerSecond
-        print "Capturing Tower Images to: " + camera.towerCaptureLocation
-        if not SINGLECAMERAMODE:
-            print "Capturing Boulder Images to: " + camera.boulderCaptureLocation
         camera.capturePictures(picturesPerSec)
     else:
         while cv2.waitKey(1) != 27 and camera.isTowerCameraOpen(): #and camera.isBoulderCameraOpen()

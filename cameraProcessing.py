@@ -19,10 +19,9 @@ class camera(object):
     towerCaptureLocation = 'capturedImages/tower '  + dateTime+ '/'
     boulderCaptureLocation = 'capturedImages/boulder '  + dateTime + '/'
     outputCaptureLocation = 'capturedImages/output '  + dateTime + '/'
-    def __init__(self, Singlecameramode, Filtertype, Testmode, Manualimagemode, Debugmode, Capturemode, Outputcapturemode, VisionNetworkTable):
+    def __init__(self, Filtertype, Testmode, Manualimagemode, Debugmode, Capturemode, Outputcapturemode, VisionNetworkTable):
         global towerCamera, boulderCamera, frames, lastTime, cameraTime
         global SINGLECAMERAMODE, FILTERTYPE, TESTMODE, MANUALIMAGEMODE, DEBUGMODE, CAPTUREMODE, OUTPUTCAPTUREMODE, visionNetworkTable, pictureNumber
-        SINGLECAMERAMODE = Singlecameramode
         FILTERTYPE = Filtertype
         TESTMODE = Testmode
         MANUALIMAGEMODE = Manualimagemode
@@ -41,12 +40,16 @@ class camera(object):
         self.towerCameraRes[0] = towerCamera.get(cv2.CAP_PROP_FRAME_WIDTH)
         self.towerCameraRes[1] = towerCamera.get(cv2.CAP_PROP_FRAME_HEIGHT)
         print "Tower Camera Resolution = " + str(self.towerCameraRes[0]) + "x" + str(self.towerCameraRes[1])
-        if not SINGLECAMERAMODE:
-            boulderCamera.set(cv2.CAP_PROP_FRAME_WIDTH, self.boulderCameraRes[0])
-            boulderCamera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.boulderCameraRes[1])
-            self.boulderCameraRes[0] = boulderCamera.get(cv2.CAP_PROP_FRAME_WIDTH)
-            self.boulderCameraRes[1] = boulderCamera.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        boulderCamera.set(cv2.CAP_PROP_FRAME_WIDTH, self.boulderCameraRes[0])
+        boulderCamera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.boulderCameraRes[1])
+        self.boulderCameraRes[0] = boulderCamera.get(cv2.CAP_PROP_FRAME_WIDTH)
+        self.boulderCameraRes[1] = boulderCamera.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        if self.boulderCameraRes[0] == 0 and self.boulderCameraRes[1] == 0:
+            print "Only one camera plugged in!"
+            SINGLECAMERAMODE = True
+        else:
             print "Boulder Camera Resolution = " + str(self.boulderCameraRes[0]) + "x" + str(self.boulderCameraRes[1])
+            SINGLECAMERAMODE = False
         lastTime = self.getTime()
         if not towerCamera.isOpened():
             print "error: Tower Camera not initialized"
@@ -59,6 +62,9 @@ class camera(object):
         self.imageNumber = img+1
     def capturePictures(self, picturesPerSecond, image = None):
         global pictureNumber, cameraTime
+        print "Capturing Tower Images to: " + camera.towerCaptureLocation
+        if not SINGLECAMERAMODE:
+            print "Capturing Boulder Images to: " + camera.boulderCaptureLocation
         if image is None:
             lastTime = self.getTime()
             if not os.path.exists(self.towerCaptureLocation):
