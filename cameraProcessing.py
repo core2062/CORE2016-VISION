@@ -12,7 +12,7 @@ class camera(object):
     global towerCamera, boulderCamera
     towerCamera = cv2.VideoCapture(0)
     boulderCamera = cv2.VideoCapture(1)
-    TOWERIMAGESOURCE = 'idealTower'
+    TOWERIMAGESOURCE = 'raspiTower'
     BOULDERIMAGESOURCE = 'boulderLaserFilter'
     imageNumber = 1
     dateTime = str(time.strftime("%m-%d_%H-%M", time.gmtime()))
@@ -150,7 +150,7 @@ class camera(object):
             self.capturePictures(1, originalImage)
     def pollTower(self, forceActualCamera = False):
         if MANUALIMAGEMODE and not forceActualCamera:
-            imgOriginal = cv2.imread('towerImages/' + self.TOWERIMAGESOURCE + '/' + self.TOWERIMAGESOURCE + ' (' + str(self.imageNumber) + ')_960x540.jpg',1)
+            imgOriginal = cv2.imread('towerImages/' + self.TOWERIMAGESOURCE + '/' + self.TOWERIMAGESOURCE + ' (' + str(self.imageNumber) + ').jpg',1)
             if imgOriginal is None:
                 print "Error: towerCamera frame not read from file"
                 return
