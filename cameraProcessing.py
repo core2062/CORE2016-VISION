@@ -37,11 +37,13 @@ class camera(object):
         pictureNumber = 1
         towerCamera.set(cv2.CAP_PROP_FRAME_WIDTH, self.towerCameraRes[0])
         towerCamera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.towerCameraRes[1])
+        towerCamera.set(cv2.CAP_MODE_RGB)
         self.towerCameraRes[0] = towerCamera.get(cv2.CAP_PROP_FRAME_WIDTH)
         self.towerCameraRes[1] = towerCamera.get(cv2.CAP_PROP_FRAME_HEIGHT)
         print "Tower Camera Resolution = " + str(self.towerCameraRes[0]) + "x" + str(self.towerCameraRes[1])
         boulderCamera.set(cv2.CAP_PROP_FRAME_WIDTH, self.boulderCameraRes[0])
         boulderCamera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.boulderCameraRes[1])
+        boulderCamera.set(cv2.CAP_MODE_GRAY)
         self.boulderCameraRes[0] = boulderCamera.get(cv2.CAP_PROP_FRAME_WIDTH)
         self.boulderCameraRes[1] = boulderCamera.get(cv2.CAP_PROP_FRAME_HEIGHT)
         if self.boulderCameraRes[0] == 0 and self.boulderCameraRes[1] == 0:
@@ -95,7 +97,7 @@ class camera(object):
             HSVImage = cv2.cvtColor(originalImage,cv2.COLOR_BGR2HSV)
             ThresholdImage = cv2.inRange(HSVImage, np.array([66,64,225]), np.array([96, 255, 255]))
         elif FILTERTYPE == "RGB": #Overall fastest filter
-            ThresholdImage = cv2.inRange(originalImage, np.array([204,227,0]), np.array([255, 255, 194])) #np.array([B,G,R])
+            ThresholdImage = cv2.inRange(originalImage, np.array([0,227,204]), np.array([194, 255, 255]))
         elif FILTERTYPE == "HSL": #Filter with the most consistent tower detection
             HSLImage = cv2.cvtColor(originalImage,cv2.COLOR_BGR2HLS)
             ThresholdImage = cv2.inRange(HSLImage, np.array([70,128,163]), np.array([99, 235, 255]))
@@ -142,8 +144,7 @@ class camera(object):
             self.capturePictures(1, originalImage)
     def processBoulder(self):
         originalImage = self.pollBoulder()
-        greyImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2GRAY)
-        ThresholdImage = cv2.inRange(greyImage, 60, 255)
+        ThresholdImage = cv2.inRange(originalImage, 60, 255)
         if TESTMODE:    
             cv2.imshow("Image", ThresholdImage)
         if OUTPUTCAPTUREMODE:
