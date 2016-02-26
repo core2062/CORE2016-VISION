@@ -2,16 +2,17 @@ import cameraProcessing
 import cv2
 try:
     import RPi.GPIO as GPIO
+    RUNNINGONPI = True
 except ImportError:
-    print "Running on Windows"
+    print "Not running on Raspberry Pi"
+    RUNNINGONPI = False
 import time
-import platform
 from networktables import NetworkTable
 import argparse
 
 TESTMODE = True
 DEBUGMODE = False
-MANUALIMAGEMODE = True
+MANUALIMAGEMODE = False
 FILTERTYPE = "HSV" #"HSV", "RGB", "HSL"
 CAPTUREMODE = False
 OUTPUTCAPTUREMODE = False
@@ -38,7 +39,7 @@ def calculateFPS(lastTime):
         return lastTime
 def main():
     global frames, pictureNumber, towerCaptureLocation, boulderCaptureLocation, outputCaptureLocation, cameraTime, visionNetworkTable, camera
-    if platform.system() == "Linux":
+    if RUNNINGONPI:
         GPIO.setmode(GPIO.BOARD)
         GPIO.setwarnings(False)
         GPIO.setup(11, GPIO.IN)
@@ -75,6 +76,7 @@ def main():
                 camera.processBoulderCamera()
             lastFPSTime = calculateFPS(lastFPSTime)
         cv2.destroyAllWindows()
+        camera.closeCameras()
     visionNetworkTable.putString("debug", time.strftime("%H:%M:%S", time.gmtime())+": Program End")
     return
 

@@ -10,9 +10,9 @@ class camera(object):
     towerCameraRes = [960, 544]
     boulderCameraRes = [800, 448]
     global towerCamera, boulderCamera
-    towerCamera = cv2.VideoCapture(0)
-    boulderCamera = cv2.VideoCapture(1)
-    TOWERIMAGESOURCE = 'raspiTower'
+    towerCamera = cv2.VideoCapture(1)
+    boulderCamera = cv2.VideoCapture(0)
+    TOWERIMAGESOURCE = 'idealTower'
     BOULDERIMAGESOURCE = 'boulderLaserFilter'
     imageNumber = 1
     dateTime = str(time.strftime("%m-%d_%H-%M", time.gmtime()))
@@ -37,16 +37,17 @@ class camera(object):
         pictureNumber = 1
         towerCamera.set(cv2.CAP_PROP_FRAME_WIDTH, self.towerCameraRes[0])
         towerCamera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.towerCameraRes[1])
-        towerCamera.set(cv2.CAP_MODE_RGB)
+        #towerCamera.set(cv2.CAP_PROP_FPS, 60)
+        #towerCamera.set(cv2.CAP_PROP_MODE, cv2.CAP_MODE_RGB)
         self.towerCameraRes[0] = towerCamera.get(cv2.CAP_PROP_FRAME_WIDTH)
         self.towerCameraRes[1] = towerCamera.get(cv2.CAP_PROP_FRAME_HEIGHT)
         print "Tower Camera Resolution = " + str(self.towerCameraRes[0]) + "x" + str(self.towerCameraRes[1])
         boulderCamera.set(cv2.CAP_PROP_FRAME_WIDTH, self.boulderCameraRes[0])
         boulderCamera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.boulderCameraRes[1])
-        boulderCamera.set(cv2.CAP_MODE_GRAY)
+        boulderCamera.set(cv2.CAP_PROP_MODE, cv2.CAP_MODE_GRAY)
         self.boulderCameraRes[0] = boulderCamera.get(cv2.CAP_PROP_FRAME_WIDTH)
         self.boulderCameraRes[1] = boulderCamera.get(cv2.CAP_PROP_FRAME_HEIGHT)
-        if self.boulderCameraRes[0] == 0 and self.boulderCameraRes[1] == 0:
+        if (self.boulderCameraRes[0] == 0 and self.boulderCameraRes[1] == 0) or self.boulderCameraRes[1] < 1:
             print "Only one camera plugged in!"
             SINGLECAMERAMODE = True
         else:
@@ -97,7 +98,8 @@ class camera(object):
             HSVImage = cv2.cvtColor(originalImage,cv2.COLOR_BGR2HSV)
             ThresholdImage = cv2.inRange(HSVImage, np.array([66,64,225]), np.array([96, 255, 255]))
         elif FILTERTYPE == "RGB": #Overall fastest filter
-            ThresholdImage = cv2.inRange(originalImage, np.array([0,227,204]), np.array([194, 255, 255]))
+            ThresholdImage = cv2.inRange(originalImage, np.array([0,227,204]), np.array([194,255,255]))
+            #ThresholdImage = cv2.inRange(originalImage, np.array([204,227,0]), np.array([255,255,194]))
         elif FILTERTYPE == "HSL": #Filter with the most consistent tower detection
             HSLImage = cv2.cvtColor(originalImage,cv2.COLOR_BGR2HLS)
             ThresholdImage = cv2.inRange(HSLImage, np.array([70,128,163]), np.array([99, 235, 255]))
@@ -151,7 +153,7 @@ class camera(object):
             self.capturePictures(1, originalImage)
     def pollTower(self, forceActualCamera = False):
         if MANUALIMAGEMODE and not forceActualCamera:
-            imgOriginal = cv2.imread('towerImages/' + self.TOWERIMAGESOURCE + '/' + self.TOWERIMAGESOURCE + ' (' + str(self.imageNumber) + ').jpg',1)
+            imgOriginal = cv2.imread('towerImages/' + self.TOWERIMAGESOURCE + '/' + self.TOWERIMAGESOURCE + ' (' + str(self.imageNumber) + ')_960x540.jpg',1)
             if imgOriginal is None:
                 print "Error: towerCamera frame not read from file"
                 return
@@ -182,6 +184,9 @@ class camera(object):
         return towerCamera.isOpened()
     def isBoulderCameraOpen(self):
         return boulderCamera.isOpened()
+    def closeCameras(self):
+        boulderCamera.release()
+        towerCamera.release()
     def getTime(self):
         if platform.system() == "Linux":
             return time.time()
