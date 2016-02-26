@@ -10,8 +10,8 @@ class camera(object):
     towerCameraRes = [960, 544]
     boulderCameraRes = [800, 448]
     global towerCamera, boulderCamera
-    towerCamera = cv2.VideoCapture(1)
-    boulderCamera = cv2.VideoCapture(0)
+    towerCamera = cv2.VideoCapture(0)
+    boulderCamera = cv2.VideoCapture(1)
     TOWERIMAGESOURCE = 'idealTower'
     BOULDERIMAGESOURCE = 'boulderLaserFilter'
     imageNumber = 1
