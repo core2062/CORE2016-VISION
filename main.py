@@ -4,7 +4,7 @@ try:
     import RPi.GPIO as GPIO
     RUNNINGONPI = True
 except ImportError:
-    print "Not running on Raspberry Pi"
+    print ("Not running on Raspberry Pi")
     RUNNINGONPI = False
 import time
 from networktables import NetworkTable
@@ -30,7 +30,7 @@ def calculateFPS(lastTime):
     deltaTime = (currentTime - lastTime)
     if(deltaTime>=1):
         fps = round(frames/(currentTime - lastTime),1)
-        print "FPS: " + str(fps)
+        print ("FPS: " + str(fps))
         visionNetworkTable.putNumber("fps", fps)
         frames = 1.0
         return currentTime

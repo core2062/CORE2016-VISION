@@ -41,33 +41,33 @@ class camera(object):
         #towerCamera.set(cv2.CAP_PROP_MODE, cv2.CAP_MODE_RGB)
         self.towerCameraRes[0] = towerCamera.get(cv2.CAP_PROP_FRAME_WIDTH)
         self.towerCameraRes[1] = towerCamera.get(cv2.CAP_PROP_FRAME_HEIGHT)
-        print "Tower Camera Resolution = " + str(self.towerCameraRes[0]) + "x" + str(self.towerCameraRes[1])
+        print ("Tower Camera Resolution = " + str(self.towerCameraRes[0]) + "x" + str(self.towerCameraRes[1]))
         boulderCamera.set(cv2.CAP_PROP_FRAME_WIDTH, self.boulderCameraRes[0])
         boulderCamera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.boulderCameraRes[1])
         boulderCamera.set(cv2.CAP_PROP_MODE, cv2.CAP_MODE_GRAY)
         self.boulderCameraRes[0] = boulderCamera.get(cv2.CAP_PROP_FRAME_WIDTH)
         self.boulderCameraRes[1] = boulderCamera.get(cv2.CAP_PROP_FRAME_HEIGHT)
         if (self.boulderCameraRes[0] == 0 and self.boulderCameraRes[1] == 0) or self.boulderCameraRes[1] < 1:
-            print "Only one camera plugged in!"
+            print ("Only one camera plugged in!")
             SINGLECAMERAMODE = True
         else:
-            print "Boulder Camera Resolution = " + str(self.boulderCameraRes[0]) + "x" + str(self.boulderCameraRes[1])
+            print ("Boulder Camera Resolution = " + str(self.boulderCameraRes[0]) + "x" + str(self.boulderCameraRes[1]))
             SINGLECAMERAMODE = False
         lastTime = self.getTime()
         if not towerCamera.isOpened():
-            print "error: Tower Camera not initialized"
+            print ("error: Tower Camera not initialized")
             os.execl(sys.executable, sys.executable, *sys.argv)
     def sendNumber(self, name, value):
         if DEBUGMODE:
-            print name + ": " + str(value)
+            print (name + ": " + str(value))
         visionNetworkTable.putNumber(name,value)
     def changeImage(self, img):
         self.imageNumber = img+1
     def capturePictures(self, picturesPerSecond, image = None):
         global pictureNumber, cameraTime
-        print "Capturing Tower Images to: " + camera.towerCaptureLocation
+        print ("Capturing Tower Images to: " + camera.towerCaptureLocation)
         if not SINGLECAMERAMODE:
-            print "Capturing Boulder Images to: " + camera.boulderCaptureLocation
+            print ("Capturing Boulder Images to: " + camera.boulderCaptureLocation)
         if image is None:
             lastTime = self.getTime()
             if not os.path.exists(self.towerCaptureLocation):
@@ -133,7 +133,7 @@ class camera(object):
             self.sendNumber("goal_height", round(largestContour[1][1],1))
             self.sendNumber("goal_angle", round(largestContour[2],1))
             if TESTMODE:
-                cv2.circle(originalImage, (int(largestContour[0][0]),int(largestContour[0][1])), 2, np.array([0,255,0]), 5, 2)
+                cv2.circle(originalImage, (int(largestContour[0][0]),int(largestContour[0][1])), 2, (0,255,0), 5, 2)
         else:
             self.sendNumber("goal_x", -1)
             self.sendNumber("goal_y", -1)
@@ -155,19 +155,19 @@ class camera(object):
         if MANUALIMAGEMODE and not forceActualCamera:
             imgOriginal = cv2.imread('towerImages/' + self.TOWERIMAGESOURCE + '/' + self.TOWERIMAGESOURCE + ' (' + str(self.imageNumber) + ')_960x540.jpg',1)
             if imgOriginal is None:
-                print "Error: towerCamera frame not read from file"
+                print ("Error: towerCamera frame not read from file")
                 return
         else:
             blnFrameReadSuccessfully, imgOriginal = towerCamera.read()
             if not blnFrameReadSuccessfully or imgOriginal is None:
-                print "Error: frame not read from towerCamera"
+                print ("Error: frame not read from towerCamera")
                 return
         return imgOriginal
     def pollBoulder(self, forceActualCamera = False):
         if MANUALIMAGEMODE and not forceActualCamera:
             imgOriginal = cv2.imread('boulderImages/' + self.BOULDERIMAGESOURCE + '/' + self.BOULDERIMAGESOURCE + ' (' + str(self.imageNumber) + ').jpg',1)
             if imgOriginal is None:
-                print "Error: boulderCamera frame not read from file"
+                print ("Error: boulderCamera frame not read from file")
                 return
         else:
             if SINGLECAMERAMODE:
@@ -175,7 +175,7 @@ class camera(object):
             else:
                 blnFrameReadSuccessfully, imgOriginal = boulderCamera.read()
             if not blnFrameReadSuccessfully or imgOriginal is None:
-                print "Error: frame not read from boulderCamera"
+                print ("Error: frame not read from boulderCamera")
                 return
         imgOriginal = imgOriginal[(int(self.boulderCameraRes[1]/6-self.boulderCameraRes[1])):self.boulderCameraRes[1], 0:self.boulderCameraRes[0]]
         #Area to Keep: [Top Y Value:Bottom Y Value, Top X Value:Bottom X Value]
