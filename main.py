@@ -1,28 +1,19 @@
 import cameraProcessing
+import constants
+import pollCamera
+import networkTables
 import cv2
 try:
     import RPi.GPIO as GPIO
-    RUNNINGONPI = True
+    constants.RUNNINGONPI = True
 except ImportError:
-    print ("Not running on Raspberry Pi")
-    RUNNINGONPI = False
+    constants.RUNNINGONPI = False
 import time
-from networktables import NetworkTable
 import argparse
 
-TESTMODE = True
-DEBUGMODE = False
-MANUALIMAGEMODE = False
-FILTERTYPE = "HSV" #"HSV", "RGB", "HSL"
-CAPTUREMODE = False
-OUTPUTCAPTUREMODE = False
-
-global visionNetworkTable
-hostname = "roboRIO-2062-FRC.local"
-NetworkTable.setIPAddress(hostname)
-NetworkTable.setClientMode()
-NetworkTable.initialize()
-visionNetworkTable = NetworkTable.getTable("vision")
+camera = cameraProcessing.camera()
+poll = pollCamera.poll()
+networkTable = networkTables.networkTable()
 
 def calculateFPS(lastTime):
     currentTime = camera.getTime()
@@ -31,7 +22,7 @@ def calculateFPS(lastTime):
     if(deltaTime>=1):
         fps = round(frames/(currentTime - lastTime),1)
         print ("FPS: " + str(fps))
-        visionNetworkTable.putNumber("fps", fps)
+        networkTable.putNumber("fps", fps)
         frames = 1.0
         return currentTime
     else:
@@ -39,38 +30,34 @@ def calculateFPS(lastTime):
         return lastTime
 def main():
     global frames, pictureNumber, towerCaptureLocation, boulderCaptureLocation, outputCaptureLocation, cameraTime, visionNetworkTable, camera
-    if RUNNINGONPI:
+    if constants.RUNNINGONPI:
         GPIO.setmode(GPIO.BOARD)
         GPIO.setwarnings(False)
         GPIO.setup(11, GPIO.IN)
         GPIO.setup(12, GPIO.OUT)
         GPIO.output(12, GPIO.HIGH)
         if GPIO.input(11):
-            global CAPTUREMODE
-            CAPTUREMODE = True
+            constants.CAPTUREMODE = True
         GPIO.output(12, GPIO.LOW)
-        global TESTMODE, MANUALIMAGEMODE, DEBUGMODE
-        TESTMODE = False
-        MANUALIMAGEMODE = False
-        DEBUGMODE = False
-    camera = cameraProcessing.camera(FILTERTYPE, TESTMODE, MANUALIMAGEMODE, DEBUGMODE, CAPTUREMODE, OUTPUTCAPTUREMODE, visionNetworkTable)
-    visionNetworkTable.putString("debug", time.strftime("%H:%M:%S", time.gmtime())+": Network Table Initialized")
-    visionNetworkTable.putString("debug", (time.strftime("%H:%M:%S", time.gmtime())+": Camera Res = " + str(camera.towerCameraRes[0]) + "x" + str(camera.towerCameraRes[1])))
+        constants.TESTMODE = False
+        constants.MANUALIMAGEMODE = False
+        constants.DEBUGMODE = False
     parser = argparse.ArgumentParser(description='CORE 2062\'s 2016 Vision Processing System - Developed by Andrew Kempen')
     parser.add_argument('-c', action='store', dest="picturesPerSecond", help='Capture images from all cameras at a rate given by the parameter in pictures/second', type=int)
     args = parser.parse_args()
     pictureNumber = 0
     lastFPSTime = camera.getTime()
     frames = 0
-    if args.picturesPerSecond or CAPTUREMODE:
-        if CAPTUREMODE:
+    if args.picturesPerSecond or constants.CAPTUREMODE:
+        if constants.CAPTUREMODE:
             picturesPerSec = 1
         else:
             picturesPerSec = args.picturesPerSecond
         camera.capturePictures(picturesPerSec)
     else:
-        while cv2.waitKey(1) != 27 and camera.isTowerCameraOpen(): #and camera.isBoulderCameraOpen()
-            if visionNetworkTable.getString("mode", "tower") == "tower":
+        while cv2.waitKey(1) != 27 and poll.isTowerCameraOpen(): #and camera.isBoulderCameraOpen()
+            if True:
+                print("POINT 1")
                 camera.processTower()
             elif visionNetworkTable.getString("mode", "tower") == "boulder":
                 camera.processBoulderCamera()
