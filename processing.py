@@ -71,6 +71,18 @@ def processTower(originalImage):
             constants.visionTable.sendNumber("rightGoal_width", round(largestContour[1][0],1))   
             constants.visionTable.sendNumber("rightGoal_height", round(largestContour[1][1],1))  
             constants.visionTable.sendNumber("rightGoal_angle", round(largestContour[2],1))
+        if largestContour[1][0]*largestContour[1][1] < secondLargestContour[1][0]*secondLargestContour[1][1]:
+            constants.visionTable.sendNumber("largestGoal_x", round(secondLargestContour[0][0],1))
+            constants.visionTable.sendNumber("largestGoal_y", round(secondLargestContour[0][1],1))
+            constants.visionTable.sendNumber("largestGoal_width", round(secondLargestContour[1][0],1))
+            constants.visionTable.sendNumber("largestGoal_height", round(secondLargestContour[1][1],1))
+            constants.visionTable.sendNumber("largestGoal_angle", round(secondLargestContour[2],1))
+        else:
+            constants.visionTable.sendNumber("largestGoal_x", round(largestContour[0][0],1))
+            constants.visionTable.sendNumber("largestGoal_y", round(largestContour[0][1],1))
+            constants.visionTable.sendNumber("largestGoal_width", round(largestContour[1][0],1))
+            constants.visionTable.sendNumber("largestGoal_height", round(largestContour[1][1],1))
+            constants.visionTable.sendNumber("largestGoal_angle", round(largestContour[2],1))
     elif largestContour is not None:
         constants.visionTable.sendNumber("leftGoal_x", round(largestContour[0][0],1))
         constants.visionTable.sendNumber("leftGoal_y", round(largestContour[0][1],1))
@@ -82,6 +94,11 @@ def processTower(originalImage):
         constants.visionTable.sendNumber("rightGoal_width", -1)
         constants.visionTable.sendNumber("rightGoal_height", -1)
         constants.visionTable.sendNumber("rightGoal_angle", -1)
+        constants.visionTable.sendNumber("largestGoal_x", round(largestContour[0][0],1))
+        constants.visionTable.sendNumber("largestGoal_y", round(largestContour[0][1],1))
+        constants.visionTable.sendNumber("largestGoal_width", round(largestContour[1][0],1))
+        constants.visionTable.sendNumber("largestGoal_height", round(largestContour[1][1],1))
+        constants.visionTable.sendNumber("largestGoal_angle", round(largestContour[2],1))
     else:
         constants.visionTable.sendNumber("leftGoal_x", -1)
         constants.visionTable.sendNumber("leftGoal_y", -1)
@@ -93,6 +110,11 @@ def processTower(originalImage):
         constants.visionTable.sendNumber("rightGoal_width", -1)
         constants.visionTable.sendNumber("rightGoal_height", -1)
         constants.visionTable.sendNumber("rightGoal_angle", -1)
+        constants.visionTable.sendNumber("largestGoal_x", -1)
+        constants.visionTable.sendNumber("largestGoal_y", -1)
+        constants.visionTable.sendNumber("largestGoal_width", -1)
+        constants.visionTable.sendNumber("largestGoal_height", -1)
+        constants.visionTable.sendNumber("largestGoal_angle", -1)
     if constants.DEBUGLEVEL >= 3:
         return originalImage
 def processBoulder(originalImage):
