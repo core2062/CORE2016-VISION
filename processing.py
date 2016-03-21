@@ -35,10 +35,19 @@ def processTower(originalImage):
                         largestArea = area
                     if constants.DEBUGLEVEL >= 3:
                         filteredContours.append(x)
-        if constants.DEBUGLEVEL >= 3 and largestContour is not None:
+        if constants.DEBUGLEVEL >= 3 and largestContour is not None and secondLargestContour is not None:
             cv2.drawContours(originalImage,contours,-1,(0,255,255),2)
             cv2.drawContours(originalImage,filteredContours,-1,(0,0,255),2)
-            cv2.circle(originalImage, (int(largestContour[0][0]),int(largestContour[0][1])), 2, (0,255,0), 5, 2)
+            if largestContour[0][0] < secondLargestContour[0][0]:
+                cv2.circle(originalImage, (int(largestContour[0][0]),int(largestContour[0][1])), 3, (20,255,57), 5, 2)
+                cv2.circle(originalImage, (int(secondLargestContour[0][0]),int(secondLargestContour[0][1])), 2, (0,100,255), 5, 2)
+            else:
+                cv2.circle(originalImage, (int(secondLargestContour[0][0]),int(secondLargestContour[0][1])), 3, (20,255,57), 5, 2)
+                cv2.circle(originalImage, (int(largestContour[0][0]),int(largestContour[0][1])), 2, (0,100,255), 5, 2)
+        elif constants.DEBUGLEVEL >= 3 and largestContour is not None:
+            cv2.drawContours(originalImage,contours,-1,(0,255,255),2)
+            cv2.drawContours(originalImage,filteredContours,-1,(0,0,255),2)
+            cv2.circle(originalImage, (int(largestContour[0][0]),int(largestContour[0][1])), 3, (20,255,57), 5, 2)
     if largestContour is not None and secondLargestContour is not None:
         if largestContour[0][0] < secondLargestContour[0][0]: #Find which contour is farther right
             constants.visionTable.sendNumber("leftGoal_x", round(largestContour[0][0],1))
