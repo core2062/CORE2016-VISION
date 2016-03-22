@@ -1,7 +1,8 @@
 import cv2
 import pollCamera
-import superUser
 import constants
+if constants.DEBUGLEVEL >= 5: 
+    import superUser
 import processing
 import functions
 import networkTableManager
@@ -11,8 +12,14 @@ import sys
 from time import sleep
 
 def init():
+    if constants.RUNNINGONPI:
+        constants.DEBUGLEVEL = 2
+        constants.MANUALIMAGEMODE = False
     constants.visionTable = networkTableManager.networkTable()
-    constants.towerCamera = pollCamera.camera(0, "Dummy_Tower")
+    if constants.MANUALIMAGEMODE:
+        constants.towerCamera = pollCamera.camera(0, "Dummy_Tower")
+    else:
+        constants.towerCamera = pollCamera.camera(0, "Tower")
     if constants.CAPTUREMODE:
         constants.recorder = cameraRecording.recorder(1, "Tower")
     functions.lastTime = functions.getTime()
@@ -43,6 +50,7 @@ def init_filter():
     return processing.processTower
 def main():
     while cv2.waitKey(1) != 27:
+        previousTime = functions.getTime()
         if constants.CAPTUREMODE:
             cv2.imshow("Image", constants.recorder.captureImages(towerCamera.read()))
         elif constants.DEBUGLEVEL >= 5:
@@ -51,6 +59,9 @@ def main():
             cv2.imshow("Image", processing.processTower(towerCamera.read()))
         else:
             processing.processTower(towerCamera.read())
+        deltaTime = (1/constants.FPSLIMIT) - (functions.getTime() - previousTime)
+        if deltaTime > 0:  
+            sleep(deltaTime)
         functions.calculateFPS()
     deInit()
 if __name__ == '__main__':

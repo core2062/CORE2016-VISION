@@ -8,14 +8,15 @@ MANUALIMAGEMODE = False
 FILTERTYPE = "HSV" #"HSV", "BGR", "HLS"
 CAPTUREMODE = False
 SINGLECAMERAMODE = False
+FPSLIMIT = 18
 PITYPE = "Tower" #"Tower", "Boulder"
+RUNNINGONPI = False
 try:
     import RPi.GPIO as GPIO
     RUNNINGONPI = True
 except ImportError:
     if DEBUGLEVEL >= 1:
         print ("Not running on Raspberry Pi")
-    RUNNINGONPI = False
 
 '''
 Vision Processing Constants
