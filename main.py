@@ -23,7 +23,7 @@ def init():
     if constants.CAPTUREMODE:
         constants.recorder = cameraRecording.recorder(1, "Tower")
     functions.lastTime = functions.getTime()
-    if constants.DEBUGLEVEL >= 3:
+    if constants.DEBUGLEVEL >= 3 and not constants.RUNNINGONPI:
         cv2.namedWindow("Image", cv2.WINDOW_AUTOSIZE)
     global towerCamera, visionTable
     towerCamera = constants.towerCamera
@@ -54,8 +54,8 @@ def main():
         if constants.CAPTUREMODE:
             cv2.imshow("Image", constants.recorder.captureImages(towerCamera.read()))
         elif constants.DEBUGLEVEL >= 5:
-            cv2.imshow("Image", constants.SU.getImage())
-        elif constants.DEBUGLEVEL >= 3:
+            cv2.imshow("Image", constants.SU.getImage() and not constants.RUNNINGONPI)
+        elif constants.DEBUGLEVEL >= 3 and not constants.RUNNINGONPI:
             cv2.imshow("Image", processing.processTower(towerCamera.read()))
         else:
             processing.processTower(towerCamera.read())
