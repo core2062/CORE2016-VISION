@@ -25,7 +25,7 @@ class SUDO(object):
                 path = ('towerImages/' + constants.TOWERIMAGESOURCE)
             elif(self.captureType == "Dummy_Boulder"):
                 path = ('boulderImages/' + constants.BOULDERIMAGESOURCE)
-            self.file_count = int(sum(os.path.isfile(os.path.join(path, f)) for f in os.listdir(path))/2)-1
+            self.file_count = int(sum(os.path.isfile(os.path.join(path, f)) for f in os.listdir(path)))-1
             cv2.createTrackbar("Image #", "Image", 0, self.file_count, self.imageSlider_event)
         Thread(target=self.update, args=()).start()
     def update(self):

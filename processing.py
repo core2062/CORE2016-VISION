@@ -115,6 +115,9 @@ def processTower(originalImage):
         constants.visionTable.sendNumber("largestGoal_width", -1)
         constants.visionTable.sendNumber("largestGoal_height", -1)
         constants.visionTable.sendNumber("largestGoal_angle", -1)
+    if constants.SENDTOSMARTDASHBOARD and largestContour is not None:
+        constants.smartDashboard.putNumber("largestGoal_x", round(largestContour[0][0],1))
+        constants.smartDashboard.putNumber("largestGoal_y", round(largestContour[0][1],1))
     if constants.DEBUGLEVEL >= 3:
         return originalImage
 def processBoulder(originalImage):

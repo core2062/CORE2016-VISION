@@ -15,13 +15,13 @@ def init():
     if constants.RUNNINGONPI:
         constants.DEBUGLEVEL = 2
         constants.MANUALIMAGEMODE = False
-    constants.visionTable = networkTableManager.networkTable()
+    constants.visionTable = networkTableManager.networkTable(constants.roboRioHostname, "vision")
     if constants.MANUALIMAGEMODE:
-        constants.towerCamera = pollCamera.camera(0, "Dummy_Tower")
+        constants.towerCamera = pollCamera.camera(1, "Dummy_Tower")
     else:
-        constants.towerCamera = pollCamera.camera(0, "Tower")
+        constants.towerCamera = pollCamera.camera(1, "Tower")
     if constants.CAPTUREMODE:
-        constants.recorder = cameraRecording.recorder(1, "Tower")
+        constants.recorder = cameraRecording.recorder(2, "Tower")
     functions.lastTime = functions.getTime()
     if constants.DEBUGLEVEL >= 3 and not constants.RUNNINGONPI:
         cv2.namedWindow("Image", cv2.WINDOW_AUTOSIZE)
@@ -54,7 +54,7 @@ def main():
         if constants.CAPTUREMODE:
             cv2.imshow("Image", constants.recorder.captureImages(towerCamera.read()))
         elif constants.DEBUGLEVEL >= 5:
-            cv2.imshow("Image", constants.SU.getImage() and not constants.RUNNINGONPI)
+            cv2.imshow("Image", constants.SU.getImage())
         elif constants.DEBUGLEVEL >= 3 and not constants.RUNNINGONPI:
             cv2.imshow("Image", processing.processTower(towerCamera.read()))
         else:

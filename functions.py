@@ -17,6 +17,8 @@ def calculateFPS():
     if(deltaTime >= 1):
         fps = round(frames/(currentTime - lastTime),1)
         constants.visionTable.sendNumber("FPS", fps)
+        if constants.SENDTOSMARTDASHBOARD:
+            constants.smartDashboard.putNumber("FPS", fps)
         if 4 > constants.DEBUGLEVEL >= 1:
             print("FPS: " + str(fps))
         frames = 1.0
