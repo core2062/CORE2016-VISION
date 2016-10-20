@@ -1,85 +1,69 @@
-import cameraProcessing
 import cv2
-try:
-    import RPi.GPIO as GPIO
-    RUNNINGONPI = True
-except ImportError:
-    print ("Not running on Raspberry Pi")
-    RUNNINGONPI = False
-import time
-from networktables import NetworkTable
-import argparse
+import pollCamera
+import constants
+if constants.DEBUGLEVEL >= 5: 
+    import superUser
+import processing
+import functions
+import networkTableManager
+import cameraRecording
+import os
+import sys
+from time import sleep
 
-TESTMODE = True
-DEBUGMODE = False
-MANUALIMAGEMODE = False
-FILTERTYPE = "HSV" #"HSV", "RGB", "HSL"
-CAPTUREMODE = False
-OUTPUTCAPTUREMODE = False
-
-global visionNetworkTable
-hostname = "roboRIO-2062-FRC.local"
-NetworkTable.setIPAddress(hostname)
-NetworkTable.setClientMode()
-NetworkTable.initialize()
-visionNetworkTable = NetworkTable.getTable("vision")
-
-def calculateFPS(lastTime):
-    currentTime = camera.getTime()
-    global frames
-    deltaTime = (currentTime - lastTime)
-    if(deltaTime>=1):
-        fps = round(frames/(currentTime - lastTime),1)
-        print ("FPS: " + str(fps))
-        visionNetworkTable.putNumber("fps", fps)
-        frames = 1.0
-        return currentTime
+def init():
+    if constants.RUNNINGONPI:
+        constants.DEBUGLEVEL = 2
+        constants.MANUALIMAGEMODE = False
+    constants.visionTable = networkTableManager.networkTable(constants.roboRioHostname, "vision")
+    if constants.MANUALIMAGEMODE:
+        constants.towerCamera = pollCamera.camera(1, "Dummy_Tower")
     else:
-        frames += 1.0
-        return lastTime
+        constants.towerCamera = pollCamera.camera(1, "Tower")
+    if constants.CAPTUREMODE:
+        constants.recorder = cameraRecording.recorder(2, "Tower")
+    functions.lastTime = functions.getTime()
+    if constants.DEBUGLEVEL >= 3 and not constants.RUNNINGONPI:
+        cv2.namedWindow("Image", cv2.WINDOW_AUTOSIZE)
+    global towerCamera, visionTable
+    towerCamera = constants.towerCamera
+    visionTable = constants.visionTable
+    timeSpentWaiting = 0
+    while not towerCamera.isFrameRead():
+        sleep(0.1)
+        if timeSpentWaiting > 5:
+            visionTable.sendError("Could not open " + towerCamera.getCameraType() + " Camera within 5 seconds, restarting")
+            restart()
+        timeSpentWaiting += 0.1
+    if constants.DEBUGLEVEL >= 5:
+        constants.SU = superUser.SUDO(constants.towerCamera)
+def deInit():
+    constants.towerCamera.close()
+    if constants.DEBUGLEVEL >= 5:
+        constants.SU.close()
+    cv2.destroyAllWindows()
+def restart():
+    print("Restarting program!")
+    os.execl(sys.executable, sys.executable, *sys.argv)
+def init_filter():
+    constants.DEBUGLEVEL = 3
+    return processing.processTower
 def main():
-    global frames, pictureNumber, towerCaptureLocation, boulderCaptureLocation, outputCaptureLocation, cameraTime, visionNetworkTable, camera
-    if RUNNINGONPI:
-        GPIO.setmode(GPIO.BOARD)
-        GPIO.setwarnings(False)
-        GPIO.setup(11, GPIO.IN)
-        GPIO.setup(12, GPIO.OUT)
-        GPIO.output(12, GPIO.HIGH)
-        if GPIO.input(11):
-            global CAPTUREMODE
-            CAPTUREMODE = True
-        GPIO.output(12, GPIO.LOW)
-        global TESTMODE, MANUALIMAGEMODE, DEBUGMODE
-        TESTMODE = False
-        MANUALIMAGEMODE = False
-        DEBUGMODE = False
-    camera = cameraProcessing.camera(FILTERTYPE, TESTMODE, MANUALIMAGEMODE, DEBUGMODE, CAPTUREMODE, OUTPUTCAPTUREMODE, visionNetworkTable)
-    visionNetworkTable.putString("debug", time.strftime("%H:%M:%S", time.gmtime())+": Network Table Initialized")
-    visionNetworkTable.putString("debug", (time.strftime("%H:%M:%S", time.gmtime())+": Camera Res = " + str(camera.towerCameraRes[0]) + "x" + str(camera.towerCameraRes[1])))
-    parser = argparse.ArgumentParser(description='CORE 2062\'s 2016 Vision Processing System - Developed by Andrew Kempen')
-    parser.add_argument('-c', action='store', dest="picturesPerSecond", help='Capture images from all cameras at a rate given by the parameter in pictures/second', type=int)
-    args = parser.parse_args()
-    pictureNumber = 0
-    lastFPSTime = camera.getTime()
-    frames = 0
-    if args.picturesPerSecond or CAPTUREMODE:
-        if CAPTUREMODE:
-            picturesPerSec = 1
+    while cv2.waitKey(1) != 27:
+        previousTime = functions.getTime()
+        if constants.CAPTUREMODE:
+            cv2.imshow("Image", constants.recorder.captureImages(towerCamera.read()))
+        elif constants.DEBUGLEVEL >= 5:
+            cv2.imshow("Image", constants.SU.getImage())
+        elif constants.DEBUGLEVEL >= 3 and not constants.RUNNINGONPI:
+            cv2.imshow("Image", processing.processTower(towerCamera.read()))
         else:
-            picturesPerSec = args.picturesPerSecond
-        camera.capturePictures(picturesPerSec)
-    else:
-        while cv2.waitKey(1) != 27 and camera.isTowerCameraOpen(): #and camera.isBoulderCameraOpen()
-            if visionNetworkTable.getString("mode", "tower") == "tower":
-                camera.processTower()
-            elif visionNetworkTable.getString("mode", "tower") == "boulder":
-                camera.processBoulderCamera()
-            lastFPSTime = calculateFPS(lastFPSTime)
-        cv2.destroyAllWindows()
-        camera.closeCameras()
-    visionNetworkTable.putString("debug", time.strftime("%H:%M:%S", time.gmtime())+": Program End")
-    return
-
-###################################################################################################
-if __name__ == "__main__":
+            processing.processTower(towerCamera.read())
+        deltaTime = (1/constants.FPSLIMIT) - (functions.getTime() - previousTime)
+        if deltaTime > 0:  
+            sleep(deltaTime)
+        functions.calculateFPS()
+    deInit()
+if __name__ == '__main__':
+    init()
     main()
